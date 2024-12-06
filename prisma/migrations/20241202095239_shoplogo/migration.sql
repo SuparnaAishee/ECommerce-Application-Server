@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "shop" ALTER COLUMN "shopLogo" DROP NOT NULL,
+ALTER COLUMN "shopDetails" DROP NOT NULL;

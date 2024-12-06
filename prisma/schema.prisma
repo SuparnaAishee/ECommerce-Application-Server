@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String           @id @default(uuid())
+  name         String
+  email        String           @unique
+  password     String
+  role         Role             @default(USER)
+  profilePhoto String?
+  status       UserStatus       @default(ACTIVE)
+  isDeleted    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  vendor       Shop?
+  orders       Order[]
+  reviews      Review[]
+  cart         Cart[]
+  following    UserShopFollow[]
+}
+
+model Shop {
+  id          String           @id @default(uuid())
+  shopName    String
+  shopLogo    String?
+  shopDetails String?
+  status      ShopStatus       @default(ACTIVE)
+  userId      String           @unique
+  user        User             @relation(fields: [userId], references: [id])
+  products    Product[]
+  orders      Order[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  follower    UserShopFollow[]
+
+  @@map("shop")
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  image     String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model UserShopFollow {
+  id        String   @id @default(uuid())
+  userId    String
+  shopId    String
+  user      User     @relation(fields: [userId], references: [id])
+  vendor    Shop     @relation(fields: [shopId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, shopId])
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  inventory   Int
+  categoryId  String
+  discount    Int?
+  view        Int      @default(0)
+  category    Category @relation(fields: [categoryId], references: [id])
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  images      String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  reviews     Review[]
+  cart        Cart[]
+  order       Order[]
+}
+
+model Cart {
+  id        String   @id @default(uuid())
+  quantity  Int
+  productId String   @unique
+  product   Product  @relation(fields: [productId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Coupon {
+  id                String         @id @default(uuid())
+  code              String         @unique
+  discount          Float
+  discountType      DiscountType
+  expiryDate        String
+  minimumOrderValue Float          @default(100)
+  usageLimit        Int?
+  status            DiscountStatus @default(ACTIVE)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  transactionId String
+  isReviewed    Boolean     @default(false)
+  quantity      Int
+  isPaid        Boolean     @default(false)
+  status        OrderStatus @default(PENDING)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  shopId        String
+  shop          Shop        @relation(fields: [shopId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String
+  userId    String
+  productId String
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+}
+
+enum Role {
+  ADMIN
+  VENDOR
+  USER
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum ShopStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum DiscountStatus {
+  ACTIVE
+  INACTIVE
+}
