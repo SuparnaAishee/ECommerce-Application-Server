@@ -5,7 +5,11 @@ import { AppError } from "../../errors/AppError";
 import httpStatus from "http-status";
 import { IUpdateCartProduct } from "./cart.interface";
 
-const addToCart = async (user: IUser, payload: Cart) => {
+const addToCart = async (
+  user: IUser,
+  payload: Cart & { type?: "replaceProduct" }
+) => {
+  const { type, ...restPayload } = payload;
   const userData = await prisma.user.findUnique({
     where: {
       email: user.email,
@@ -30,36 +34,44 @@ const addToCart = async (user: IUser, payload: Cart) => {
     throw new AppError(httpStatus.NOT_FOUND, "insufficient  product quantity");
   }
 
-  const cartData = await prisma.cart.findFirst({
+  const isAddedToCart = await prisma.cart.findUnique({
     where: {
-      userId: userData?.id,
-    },
-    include: {
-      product: {
-        include: {
-          shop: true,
-        },
-      },
+      productId: payload?.productId,
     },
   });
-
-  if (cartData && cartData?.product?.shopId !== product?.shopId) {
+  if (isAddedToCart) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Adding multiple shop product is not allowed! Either purchase existing shop product or delete the cart product first!"
+      "This product is already in your cart"
     );
   }
-  payload.userId = userData.id;
-  const result = await prisma.cart.create({
-    data: payload,
-    include: {
-      product: {
-        include: {
-          shop: true,
+
+  restPayload.userId = userData.id;
+
+  const result = await prisma.$transaction(async (tx) => {
+    console.log(type);
+    if (payload?.type && payload?.type === "replaceProduct") {
+      await tx.cart.deleteMany({
+        where: {
+          userId: user?.id,
+        },
+      });
+    }
+
+    const cartData = await tx.cart.create({
+      data: restPayload,
+      include: {
+        product: {
+          include: {
+            shop: true,
+          },
         },
       },
-    },
+    });
+
+    return cartData;
   });
+
   return result;
 };
 
