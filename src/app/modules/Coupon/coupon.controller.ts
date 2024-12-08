@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { couponService } from "./coupon.service";
+import { pick } from "../../../utils/pick";
 
 const createCoupon = catchAsync(async (req, res) => {
   const result = await couponService.createCoupon(req.body);
@@ -13,14 +14,26 @@ const createCoupon = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const validateCoupon = catchAsync(async (req, res) => {
+  const result = await couponService.validateCoupon(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Discount retrieved successfully",
+    data: result,
+  });
+});
 const getAllCoupon = catchAsync(async (req, res) => {
-  const result = await couponService.getAllCoupon();
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const { data, meta } = await couponService.getAllCoupon(options);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Coupon are retrieved successfully",
-    data: result,
+    data: data,
+    meta,
   });
 });
 const deleteCoupon = catchAsync(async (req, res) => {
@@ -39,4 +52,5 @@ export const couponController = {
   createCoupon,
   getAllCoupon,
   deleteCoupon,
+  validateCoupon,
 };

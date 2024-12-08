@@ -5,7 +5,6 @@ import prisma from "../../helpers/prisma";
 
 const confirmationService = async (transactionId: string, status: string) => {
   let greeting;
-  let roomName = "";
 
   const order = await prisma.order.findFirst({
     where: {
@@ -43,8 +42,8 @@ const confirmationService = async (transactionId: string, status: string) => {
 
   template = template.replace("{{success}}", status);
   template = template.replace("{{greeting}}", greeting);
-  template = template.replace("{{bookingId}}", transactionId || "");
-  template = template.replace("{{roomName}}", roomName);
+  template = template.replace("{{orderId}}", transactionId || "");
+
   return template;
 };
 

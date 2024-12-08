@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { userService } from "./user.service";
+import { pick } from "../../../utils/pick";
 
 const updateUserRoleStatus = catchAsync(async (req, res) => {
   const { userId } = req.params;
@@ -15,13 +16,15 @@ const updateUserRoleStatus = catchAsync(async (req, res) => {
   });
 });
 const getAllUser = catchAsync(async (req, res) => {
-  const result = await userService.getAllUser(req.user);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const { data, meta } = await userService.getAllUser(req.user, options);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Users are retrieved successfully",
-    data: result,
+    data: data,
+    meta,
   });
 });
 

@@ -13,6 +13,13 @@ router.post(
   validateRequest(couponValidation.createCoupon),
   couponController.createCoupon
 );
+router.post(
+  "/validate-coupon",
+  auth(Role.USER),
+  validateRequest(couponValidation.validateCoupon),
+  couponController.validateCoupon
+);
+
 router.get("/", auth(Role.ADMIN), couponController.getAllCoupon);
 router.delete("/:couponId", auth(Role.ADMIN), couponController.deleteCoupon);
 

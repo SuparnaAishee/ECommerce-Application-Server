@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { shopService } from "./shop.service";
+import { pick } from "../../../utils/pick";
 
 const createShop = catchAsync(async (req, res) => {
   const result = await shopService.createShop(
@@ -18,13 +19,15 @@ const createShop = catchAsync(async (req, res) => {
   });
 });
 const getAllShop = catchAsync(async (req, res) => {
-  const result = await shopService.getAllShop();
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const { data, meta } = await shopService.getAllShop(options);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Shops are retrieved created successfully",
-    data: result,
+    data: data,
+    meta,
   });
 });
 const getMyShop = catchAsync(async (req, res) => {

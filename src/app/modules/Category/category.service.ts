@@ -3,6 +3,8 @@ import prisma from "../../helpers/prisma";
 import { AppError } from "../../errors/AppError";
 import httpStatus from "http-status";
 import { fileUploader } from "../../../utils/fileUploader";
+import { IPaginationOptions } from "../../interfaces/pagination";
+import { paginationHelper } from "../../helpers/paginationHelper";
 
 const createCategory = async (file: Express.Multer.File, payload: Category) => {
   const category = await prisma.category.findUnique({
@@ -25,13 +27,29 @@ const createCategory = async (file: Express.Multer.File, payload: Category) => {
   });
   return result;
 };
-const getAllCategories = async () => {
+const getAllCategories = async (options: IPaginationOptions) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
   const result = await prisma.category.findMany({
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : { createdAt: "desc" },
     include: {
       products: true,
     },
   });
-  return result;
+  const total = await prisma.category.count();
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 const getSingleCategory = async (id: string) => {
   return await prisma.category.findUnique({

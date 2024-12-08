@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -64,23 +65,26 @@ model UserShopFollow {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  price       Float
-  inventory   Int
-  categoryId  String
-  discount    Int?
-  view        Int      @default(0)
-  category    Category @relation(fields: [categoryId], references: [id])
-  shopId      String
-  shop        Shop     @relation(fields: [shopId], references: [id])
-  images      String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  reviews     Review[]
-  cart        Cart[]
-  order       Order[]
+  id                  String    @id @default(uuid())
+  name                String
+  description         String
+  isFlashSale         Boolean   @default(false)
+  discount_percentage Int?
+  sale_start_time     DateTime?
+  sale_end_time       DateTime?
+  price               Float
+  inventory           Int
+  categoryId          String
+  view                Int       @default(0)
+  category            Category  @relation(fields: [categoryId], references: [id])
+  shopId              String
+  shop                Shop      @relation(fields: [shopId], references: [id])
+  images              String[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  reviews             Review[]
+  cart                Cart[]
+  order               Order[]
 }
 
 model Cart {
@@ -108,16 +112,17 @@ model Coupon {
 }
 
 model Order {
-  id            String      @id @default(uuid())
-  transactionId String
-  isReviewed    Boolean     @default(false)
-  quantity      Int
-  isPaid        Boolean     @default(false)
-  status        OrderStatus @default(PENDING)
-  userId        String
-  user          User        @relation(fields: [userId], references: [id])
-  shopId        String
-  shop          Shop        @relation(fields: [shopId], references: [id])
+  id              String      @id @default(uuid())
+  transactionId   String
+  discountedPrice Int?
+  isReviewed      Boolean     @default(false)
+  quantity        Int
+  isPaid          Boolean     @default(false)
+  status          OrderStatus @default(PENDING)
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  shopId          String
+  shop            Shop        @relation(fields: [shopId], references: [id])
 
   productId String
   product   Product @relation(fields: [productId], references: [id])

@@ -10,6 +10,14 @@ export const createCoupon = z.object({
   }),
 });
 
+const validateCoupon = z.object({
+  body: z.object({
+    totalAmount: z.number({ required_error: "Total amount is required" }),
+    code: z.string({ required_error: "Code is required" }),
+  }),
+});
+
 export const couponValidation = {
   createCoupon,
+  validateCoupon,
 };

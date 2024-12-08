@@ -64,12 +64,11 @@
   <body id="back-button">
     <div class="modal-overlay">
       <div class="modal-content">
-        <h2>Booking {{success}}!</h2>
+        <h2>Order {{success}}!</h2>
         <p>{{greeting}}</p>
         <div class="booking-details">
-          <p><strong>Booking ID:</strong> {{bookingId}}</p>
-          <p><strong>Booking Date:</strong> {{bookingDate}}</p>
-          <p><strong>Room:</strong> {{roomName}}</p>
+          <p><strong>Order ID:</strong> {{orderId}}</p>
+
           <!-- Add more details as needed -->
         </div>
         <button id="back-buttons">Back to Home</button>
@@ -77,6 +76,8 @@
     </div>
     <script>
       document.getElementById("back-button").addEventListener("click", () => {
+        // window.location.href =
+        //   "https://e-commerce-rho-nine.vercel.app/account/order-history";
         window.location.href = "http://localhost:3001/account/order-history";
       });
     </script>

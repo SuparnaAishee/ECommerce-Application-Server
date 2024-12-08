@@ -5,6 +5,8 @@ import httpStatus from "http-status";
 import { fileUploader } from "../../../utils/fileUploader";
 import { IUser } from "../User/user.interface";
 import { IUpdateShopStatus } from "./shop.interface";
+import { IPaginationOptions } from "../../interfaces/pagination";
+import { paginationHelper } from "../../helpers/paginationHelper";
 
 const createShop = async (
   user: IUser,
@@ -42,8 +44,27 @@ const createShop = async (
   return result;
 };
 
-const getAllShop = async () => {
-  return await prisma.shop.findMany({ include: { user: true } });
+const getAllShop = async (options: IPaginationOptions) => {
+  const { limit, page, skip } = paginationHelper.calculatePagination(options);
+  const result = await prisma.shop.findMany({
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? { [options.sortBy]: options.sortOrder }
+        : { createdAt: "desc" },
+    include: { user: true },
+  });
+  const total = await prisma.shop.count();
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 const getMyShop = async (user: IUser) => {

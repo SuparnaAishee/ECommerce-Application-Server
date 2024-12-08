@@ -26,7 +26,7 @@ router.get("/:productId", productController.getSingleProduct);
 
 router.patch(
   "/:productId",
-  auth(Role.VENDOR),
+  auth(Role.VENDOR, Role.ADMIN),
   fileUploader.uploadMultiple,
   parseRequest,
   validateRequest(productValidation.updateProduct),

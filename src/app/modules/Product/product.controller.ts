@@ -25,6 +25,7 @@ const getAllProduct = catchAsync(async (req, res) => {
   const { data, meta } = await productService.getAllProduct(
     filterQuery,
     options
+    // req.user
   );
 
   sendResponse(res, {
@@ -37,13 +38,15 @@ const getAllProduct = catchAsync(async (req, res) => {
 });
 
 const getMyProducts = catchAsync(async (req, res) => {
-  const result = await productService.getMyProducts(req.user);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const { data, meta } = await productService.getMyProducts(req.user, options);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Product are retrieved successfully",
-    data: result,
+    data,
+    meta,
   });
 });
 
