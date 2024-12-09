@@ -12,6 +12,7 @@ import { reviewRoutes } from "../modules/Review/review.route";
 import { couponRoutes } from "../modules/Coupon/coupon.route";
 import { flashSaleRoutes } from "../modules/FlashSale/flashSale.route";
 import { profileRoutes } from "../modules/Profile/profile.route";
+import { comparisonRoutes } from "../modules/Comparison/comparison.route";
 
 const router = Router();
 
@@ -67,6 +68,10 @@ const moduleRoutes = [
   {
     path: "/profile",
     route: profileRoutes,
+  },
+  {
+    path: "/comparisons",
+    route: comparisonRoutes,
   },
 ];
 

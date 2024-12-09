@@ -6,7 +6,15 @@ import router from "./app/routes";
 const app: Application = express();
 
 //middleware
-app.use(cors({ credentials: true, origin: ["http://localhost:3001"] }));
+app.use(
+  cors({
+    credentials: true,
+    origin: [
+      "http://localhost:3001",
+      "https://e-commerce-rho-nine.vercel.app/",
+    ],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
