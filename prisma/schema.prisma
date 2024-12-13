@@ -24,6 +24,9 @@ model User {
   reviews      Review[]
   cart         Cart[]
   following    UserShopFollow[]
+  comparison   Comparison[]
+
+  Wishlist Wishlist[]
 }
 
 model Shop {
@@ -65,27 +68,52 @@ model UserShopFollow {
 }
 
 model Product {
-  id                  String    @id @default(uuid())
+  id                  String       @id @default(uuid())
   name                String
   description         String
-  isFlashSale         Boolean   @default(false)
+  isFlashSale         Boolean      @default(false)
   discount_percentage Int?
   sale_start_time     DateTime?
   sale_end_time       DateTime?
   price               Float
   inventory           Int
   categoryId          String
-  view                Int       @default(0)
-  category            Category  @relation(fields: [categoryId], references: [id])
+  view                Int          @default(0)
+  category            Category     @relation(fields: [categoryId], references: [id])
   shopId              String
-  shop                Shop      @relation(fields: [shopId], references: [id])
+  shop                Shop         @relation(fields: [shopId], references: [id])
   images              String[]
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
   reviews             Review[]
   cart                Cart[]
   order               Order[]
+  comparison          Comparison[]
+
+  Wishlist Wishlist[]
 }
+
+model Comparison {
+  id        String  @id @default(uuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model   Wishlist {
+  id        String  @id @default(uuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+
 
 model Cart {
   id        String   @id @default(uuid())

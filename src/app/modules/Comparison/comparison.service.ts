@@ -1,4 +1,4 @@
-import { Comparison } from "@prisma/client";
+import {Comparison }from "@prisma/client";
 import { IUser } from "../User/user.interface";
 import prisma from "../../helpers/prisma";
 import { AppError } from "../../errors/AppError";

@@ -10,8 +10,8 @@ app.use(
   cors({
     credentials: true,
     origin: [
-      "http://localhost:3001",
-      "https://e-commerce-rho-nine.vercel.app/",
+      "*",
+    
     ],
   })
 );

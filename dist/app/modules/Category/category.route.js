@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.categoryRoutes = void 0;
+const express_1 = require("express");
+const auth_1 = __importDefault(require("../../../utils/auth"));
+const client_1 = require("@prisma/client");
+const validateRequest_1 = __importDefault(require("../../../utils/validateRequest"));
+const category_validation_1 = require("./category.validation");
+const category_controller_1 = require("./category.controller");
+const fileUploader_1 = require("../../../utils/fileUploader");
+const parseRequest_1 = __importDefault(require("../../../utils/parseRequest"));
+const router = (0, express_1.Router)();
+router.post("/create-category", (0, auth_1.default)(client_1.Role.ADMIN), fileUploader_1.fileUploader.upload.single("file"), parseRequest_1.default, (0, validateRequest_1.default)(category_validation_1.categoryValidation.createCategory), category_controller_1.categoryController.createCategory);
+router.get("/", category_controller_1.categoryController.getAllCategories);
+router.get("/:categoryId", (0, auth_1.default)(client_1.Role.ADMIN, client_1.Role.VENDOR, client_1.Role.USER), category_controller_1.categoryController.getSingleCategory);
+router.patch("/:categoryId", (0, auth_1.default)(client_1.Role.ADMIN), fileUploader_1.fileUploader.upload.single("file"), parseRequest_1.default, (0, validateRequest_1.default)(category_validation_1.categoryValidation.updateCategory), category_controller_1.categoryController.updateSingleCategory);
+router.delete("/:categoryId", (0, auth_1.default)(client_1.Role.ADMIN), category_controller_1.categoryController.deleteSingleCategory);
+exports.categoryRoutes = router;

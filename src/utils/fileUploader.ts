@@ -3,9 +3,9 @@ import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import { Readable } from "stream";
 
 cloudinary.config({
-  cloud_name: "daar91zv4",
-  api_key: "573799455418682",
-  api_secret: "gzo1SMIvFxeau3-bPvE-RQDxVQQ",
+  cloud_name: "dwelabpll",
+  api_key: "531796796489992",
+  api_secret: "Vx6dR3n31J3JZ6NmI0oi-c1064s",
 });
 
 const storage = multer.memoryStorage();

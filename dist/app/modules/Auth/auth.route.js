@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.authRoutes = void 0;
+const express_1 = require("express");
+const auth_controller_1 = require("./auth.controller");
+const auth_1 = __importDefault(require("../../../utils/auth"));
+const client_1 = require("@prisma/client");
+const fileUploader_1 = require("../../../utils/fileUploader");
+const parseRequest_1 = __importDefault(require("../../../utils/parseRequest"));
+const validateRequest_1 = __importDefault(require("../../../utils/validateRequest"));
+const user_validation_1 = require("../User/user.validation");
+const router = (0, express_1.Router)();
+router.post("/register", fileUploader_1.fileUploader.upload.single("file"), parseRequest_1.default, (0, validateRequest_1.default)(user_validation_1.userValidation.createUser), auth_controller_1.authController.createUser);
+router.post("/login", auth_controller_1.authController.loginUser);
+router.post("/refreshToken", auth_controller_1.authController.refreshToken);
+router.post("/change-password", (0, auth_1.default)(client_1.Role.ADMIN, client_1.Role.VENDOR, client_1.Role.USER), auth_controller_1.authController.changePassword);
+router.post("/forgot-password", auth_controller_1.authController.forgotPassword);
+router.post("/reset-password", auth_controller_1.authController.resetPassword);
+exports.authRoutes = router;

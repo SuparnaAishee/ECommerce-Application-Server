@@ -9,10 +9,12 @@ import sendEmail from "../../../utils/sendEmail";
 import { User } from "@prisma/client";
 import { fileUploader } from "../../../utils/fileUploader";
 
+
 const createUser = async (
   file: Express.Multer.File,
   payload: User,
-  password: string
+  password: string,
+ 
 ) => {
   const user = await prisma.user.findUnique({
     where: {
