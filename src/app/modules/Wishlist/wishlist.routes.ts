@@ -1,26 +1,33 @@
 import { Router } from "express";
 import auth from "../../../utils/auth";
 import { Role } from "@prisma/client";
-import { wishlistController } from "./wishlist.controller";
-import { wishlistValidation } from "./wishlist.validation";
 import validateRequest from "../../../utils/validateRequest";
+import { wishlistValidation } from "./wishlist.validation";
+import { wishlistController } from "./wishlist.controller";
 
 const router = Router();
 
 router.post(
-  "/add",
+  "/add-to-wishlist",
   auth(Role.USER),
   validateRequest(wishlistValidation.addToWishlist),
   wishlistController.addToWishlist
 );
-
-router.get("/", auth(Role.USER), wishlistController.getWishlist);
-
-router.delete(
-  "/remove/:productId",
+router.get(
+  "/my-wishlist",
   auth(Role.USER),
-  validateRequest(wishlistValidation.removeFromWishlist),
-  wishlistController.removeFromWishlist
+  wishlistController.getMyWishlistProducts
+);
+router.delete(
+  "/:wishlistId",
+  auth(Role.USER),
+  wishlistController.deleteMyWishlistProducts
+);
+
+router.patch(
+  "/",
+  auth(Role.USER),
+  wishlistController.updateWishlistProductQuantity
 );
 
 export const wishlistRoutes = router;
