@@ -1,11 +1,16 @@
 import express, { Application } from "express";
 import cors, { CorsOptions } from "cors";
+import helmet from "helmet";
 import config from "./app/config";
 import globalErrorHandler from "./utils/globalErrorHandler";
 import notFound from "./utils/notFound";
+import { apiLimiter } from "./utils/rateLimit";
 import router from "./app/routes";
 
 const app: Application = express();
+
+app.set("trust proxy", 1);
+app.use(helmet());
 
 const allowedOrigins = config.cors_allowed_origins?.length
   ? config.cors_allowed_origins
@@ -24,7 +29,7 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-app.use("/api/v1", router);
+app.use("/api/v1", apiLimiter, router);
 
 app.get("/", (_req, res) => {
   res.send("Hello World!");
