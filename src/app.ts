@@ -1,27 +1,32 @@
 import express, { Application } from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
+import config from "./app/config";
 import globalErrorHandler from "./utils/globalErrorHandler";
 import notFound from "./utils/notFound";
 import router from "./app/routes";
+
 const app: Application = express();
 
-//middleware
-app.use(
-  cors({
-    credentials: true,
-    origin: [
-      "*",
-    
-    ],
-  })
-);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = config.cors_allowed_origins?.length
+  ? config.cors_allowed_origins
+  : [config.client_base_url];
 
-// module route
+const corsOptions: CorsOptions = {
+  credentials: true,
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS: origin ${origin} is not allowed`));
+  },
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
 app.use("/api/v1", router);
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Hello World!");
 });
 
