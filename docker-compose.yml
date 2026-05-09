@@ -1,0 +1,37 @@
+services:
+  # Self-hosted n8n powering the AI shopping assistant.
+  # The backend (running outside Docker via `npm run dev`) reaches this
+  # service at http://localhost:5678. n8n itself reaches the host backend
+  # via host.docker.internal:5000.
+  n8n:
+    image: n8nio/n8n:1.79.3
+    container_name: dokanxpress-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678/
+      GENERIC_TIMEZONE: Asia/Dhaka
+      # Basic auth for the n8n editor UI. Override in .env (or shell)
+      # before starting compose. Defaults are intentionally weak so a
+      # forgotten override fails closed in production setups.
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-changeme}
+      # The chat workflow calls Gemini and the host backend. Both are
+      # configured as workflow credentials in the n8n editor, but we
+      # forward the keys via env so the committed workflow JSON is
+      # portable.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      DOKANXPRESS_BACKEND_URL: http://host.docker.internal:5000
+    volumes:
+      # Persist n8n's encrypted credential store, workflows, and queue.
+      - ./n8n_data:/home/node/.n8n
+      # Mount the committed workflow JSON so it can be imported on first
+      # boot from the editor.
+      - ./n8n/workflows:/workflows:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

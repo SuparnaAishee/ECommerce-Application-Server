@@ -14,6 +14,7 @@ import { flashSaleRoutes } from "../modules/FlashSale/flashSale.route";
 import { profileRoutes } from "../modules/Profile/profile.route";
 import { comparisonRoutes } from "../modules/Comparison/comparison.route";
 import { wishlistRoutes } from "../modules/Wishlist/wishlist.routes";
+import { chatRoutes } from "../modules/Chat/chat.route";
 
 const router = Router();
 
@@ -77,6 +78,10 @@ const moduleRoutes = [
   {
     path: "/wishlist",
     route: wishlistRoutes,
+  },
+  {
+    path: "/chat",
+    route: chatRoutes,
   },
 ];
 

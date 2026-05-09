@@ -1,0 +1,78 @@
+{
+  "name": "Dokan Express AI Shopping Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-chat",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 320],
+      "webhookId": "dokanxpress-chat"
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Dokan Express AI Shopping Assistant — orchestrates Gemini + backend.\n// Inputs (from webhook body): { message: string, userId?: string }\n// Output: { reply: string, intent: string, products: object[], suggestions: string[] }\n\nconst body = $input.first().json.body || {};\nconst message = String(body.message || '').trim();\n\nif (!message) {\n  return [{ json: { reply: \"What can I help you find?\", intent: 'FAQ', products: [], suggestions: [] } }];\n}\n\nconst geminiKey = process.env.GEMINI_API_KEY;\nif (!geminiKey) {\n  throw new Error('GEMINI_API_KEY is not set in the n8n environment');\n}\n\nconst backendUrl = process.env.DOKANXPRESS_BACKEND_URL || 'http://host.docker.internal:5000';\n\nconst systemPrompt = `You are a helpful shopping assistant for Dokan Express, an online marketplace.\nClassify the user's message and respond with STRICTLY VALID JSON in this shape:\n{\n  \"intent\": \"SEARCH\" | \"RECOMMEND\" | \"ORDER_STATUS\" | \"FAQ\",\n  \"query\": \"<extracted product search keywords if intent is SEARCH or RECOMMEND, else empty>\",\n  \"reply\": \"<a friendly 1-2 sentence reply for the customer>\",\n  \"suggestions\": [\"<2-3 short follow-up question suggestions>\"]\n}\n\nIntent guide:\n- SEARCH: user wants a specific kind of product (\"wireless headphones under $100\", \"red running shoes\")\n- RECOMMEND: user wants suggestions (\"what's good for a coffee lover?\", \"gift ideas for a 30 year old gamer\")\n- ORDER_STATUS: asking about an existing order\n- FAQ: returns, shipping, payment methods, store policies, etc.\n\nThe reply must be conversational and concise. Do NOT list product names or prices in the reply — those will be attached as cards by the application. Output ONLY the JSON object, no markdown fences, no commentary.`;\n\nconst geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(geminiKey);\nconst geminiPayload = {\n  contents: [\n    { role: 'user', parts: [{ text: systemPrompt + '\\n\\nUser message: ' + message }] }\n  ],\n  generationConfig: {\n    temperature: 0.4,\n    responseMimeType: 'application/json'\n  }\n};\n\nconst geminiRes = await fetch(geminiUrl, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify(geminiPayload)\n});\n\nif (!geminiRes.ok) {\n  const errText = await geminiRes.text();\n  throw new Error('Gemini API error ' + geminiRes.status + ': ' + errText);\n}\n\nconst geminiJson = await geminiRes.json();\nconst rawText = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';\n\nlet parsed;\ntry {\n  parsed = JSON.parse(rawText);\n} catch (err) {\n  parsed = { intent: 'FAQ', query: '', reply: rawText, suggestions: [] };\n}\n\nconst intent = parsed.intent || 'FAQ';\nconst query = parsed.query || '';\nconst reply = parsed.reply || \"Sorry, I didn't quite catch that.\";\nconst suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 3) : [];\n\nlet products = [];\nif ((intent === 'SEARCH' || intent === 'RECOMMEND') && query) {\n  const url = new URL(backendUrl + '/api/v1/products');\n  url.searchParams.set('searchTerm', query);\n  url.searchParams.set('limit', '5');\n  url.searchParams.set('page', '1');\n\n  try {\n    const res = await fetch(url.toString());\n    if (res.ok) {\n      const json = await res.json();\n      products = (json?.data || []).map((p) => ({\n        id: p.id,\n        name: p.name,\n        price: p.price,\n        image: Array.isArray(p.images) && p.images[0] ? p.images[0] : null,\n        shop: p.shop?.shopName,\n        category: p.category?.name,\n        isFlashSale: !!p.isFlashSale,\n        discount_percentage: p.discount_percentage || null\n      }));\n    }\n  } catch (err) {\n    // Backend unreachable — gracefully degrade with no products. The user-facing reply\n    // from Gemini still goes through.\n  }\n}\n\nreturn [{ json: { reply, intent, query, products, suggestions } }];"
+      },
+      "id": "code-orchestrate",
+      "name": "Classify & fetch products",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 320]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, data: $json } }}",
+        "options": {}
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 320]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Classify & fetch products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify & fetch products": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0",
+  "meta": {
+    "instanceId": "dokanxpress"
+  },
+  "tags": [
+    { "name": "dokanxpress" },
+    { "name": "ai-assistant" }
+  ]
+}

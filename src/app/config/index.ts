@@ -43,6 +43,13 @@ const envSchema = z.object({
   PAYMENT_VERIFY_URL: z.string().url(),
   STORE_ID: z.string().min(1),
   SIGNATURE_KEY: z.string().min(1),
+
+  // AI Shopping Assistant — chat API proxies user messages to this n8n webhook
+  N8N_WEBHOOK_URL: z
+    .string()
+    .url()
+    .default("http://localhost:5678/webhook/chat"),
+  N8N_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -78,4 +85,6 @@ export default {
   payment_verify_url: env.PAYMENT_VERIFY_URL,
   store_id: env.STORE_ID,
   signature_key: env.SIGNATURE_KEY,
+  n8n_webhook_url: env.N8N_WEBHOOK_URL,
+  n8n_request_timeout_ms: env.N8N_REQUEST_TIMEOUT_MS,
 };
