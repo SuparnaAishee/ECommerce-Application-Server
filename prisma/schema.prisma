@@ -91,6 +91,10 @@ model Product {
   comparison          Comparison[]
 
   Wishlist Wishlist[]
+
+  @@index([categoryId])
+  @@index([shopId])
+  @@index([isFlashSale])
 }
 
 model Comparison {
@@ -118,12 +122,16 @@ model   Wishlist {
 model Cart {
   id        String   @id @default(uuid())
   quantity  Int
-  productId String   @unique
+  productId String
   product   Product  @relation(fields: [productId], references: [id])
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
 }
 
 model Coupon {
@@ -131,7 +139,7 @@ model Coupon {
   code              String         @unique
   discount          Float
   discountType      DiscountType
-  expiryDate        String
+  expiryDate        DateTime
   minimumOrderValue Float          @default(100)
   usageLimit        Int?
   status            DiscountStatus @default(ACTIVE)
@@ -157,6 +165,11 @@ model Order {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([shopId])
+  @@index([productId])
+  @@index([status])
 }
 
 model Review {
@@ -171,6 +184,7 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, productId])
+  @@index([productId])
 }
 
 enum Role {

@@ -16,18 +16,13 @@ router.post(
 router.get(
   "/my-wishlist",
   auth(Role.USER),
-  wishlistController.getMyWishlistProducts
+  wishlistController.getWishlist
 );
 router.delete(
-  "/:wishlistId",
+  "/:productId",
   auth(Role.USER),
-  wishlistController.deleteMyWishlistProducts
-);
-
-router.patch(
-  "/",
-  auth(Role.USER),
-  wishlistController.updateWishlistProductQuantity
+  validateRequest(wishlistValidation.removeFromWishlist),
+  wishlistController.removeFromWishlist
 );
 
 export const wishlistRoutes = router;

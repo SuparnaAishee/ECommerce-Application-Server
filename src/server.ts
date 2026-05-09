@@ -6,7 +6,9 @@ const main = () => {
   try {
     app.listen(config.port, () => {
       console.log(`E-Commerce App is running on port ${config.port}`);
-      seedAdmin();
+      seedAdmin().catch((err) => {
+        console.error("seedAdmin failed (server will keep running):", err.message);
+      });
     });
   } catch (error) {
     console.log(error);

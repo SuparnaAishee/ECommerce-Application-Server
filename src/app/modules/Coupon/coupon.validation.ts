@@ -6,7 +6,10 @@ export const createCoupon = z.object({
     code: z.string({ required_error: "Coupon code is required" }),
     discount: z.number({ required_error: "Discount is required" }),
     discountType: z.enum([DiscountType.FIXED, DiscountType.PERCENTAGE]),
-    expiryDate: z.string({ required_error: "Expiry date is required" }),
+    expiryDate: z.coerce.date({
+      required_error: "Expiry date is required",
+      invalid_type_error: "Expiry date must be a valid ISO date",
+    }),
   }),
 });
 

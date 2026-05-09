@@ -55,11 +55,9 @@ const validateCoupon = async (payload: {
     throw new AppError(httpStatus.BAD_REQUEST, `Coupon usage limit is finish`);
   }
 
-  const [day, month, year] = coupon?.expiryDate.split("-").map(Number);
-  const formattedDate = new Date(year, month - 1, day);
   const currentDate = new Date();
   currentDate.setHours(0, 0, 0, 0);
-  if (formattedDate < currentDate) {
+  if (coupon.expiryDate < currentDate) {
     throw new AppError(httpStatus.BAD_REQUEST, `Coupon Date is expired`);
   }
 

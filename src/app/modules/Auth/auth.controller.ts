@@ -1,7 +1,19 @@
 import httpStatus from "http-status";
+import type { CookieOptions } from "express";
 import { authService } from "./auth.service";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
+import config from "../../config";
+
+const REFRESH_TOKEN_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+const refreshTokenCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: config.node_env === "production",
+  sameSite: "strict",
+  path: "/",
+  maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE_MS,
+};
 
 const createUser = catchAsync(async (req, res) => {
   const { password, user } = req.body;
@@ -25,10 +37,7 @@ const createUser = catchAsync(async (req, res) => {
 const loginUser = catchAsync(async (req, res) => {
   const result = await authService.loginUser(req.body);
   const { accessToken, refreshToken } = result;
-  res.cookie("refreshToken", refreshToken, {
-    secure: false,
-    httpOnly: true,
-  });
+  res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

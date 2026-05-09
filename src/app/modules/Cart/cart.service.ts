@@ -36,7 +36,10 @@ const addToCart = async (
 
   const isAddedToCart = await prisma.cart.findUnique({
     where: {
-      productId: payload?.productId,
+      userId_productId: {
+        userId: userData.id,
+        productId: payload.productId,
+      },
     },
   });
   if (isAddedToCart) {
