@@ -27,6 +27,9 @@ services:
       # portable.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       DOKANXPRESS_BACKEND_URL: http://host.docker.internal:5000
+      # Allow Code nodes to read process env via $env.* (defaults to true =
+      # blocked in n8n 1.x). Required for the chat workflow to read GEMINI_API_KEY.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
     volumes:
       # Persist n8n's encrypted credential store, workflows, and queue.
       - ./n8n_data:/home/node/.n8n
