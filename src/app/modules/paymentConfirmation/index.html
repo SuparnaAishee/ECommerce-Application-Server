@@ -3,83 +3,336 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Confirmation Modal</title>
+    <title>{{title}} · Dokan Express</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        font-family: Arial, sans-serif;
+        min-height: 100vh;
+        font-family: "Poppins", system-ui, sans-serif;
+        background: linear-gradient(180deg, #fff7ed 0%, #fff 60%);
+        color: #111827;
+        -webkit-font-smoothing: antialiased;
       }
-
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
+      .container {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #ea580c;
+        margin-bottom: 28px;
+      }
+      .brand-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #f97316;
+      }
+      .hero {
+        position: relative;
+        background: #fff;
+        border: 1px solid #ffedd5;
+        border-radius: 24px;
+        box-shadow: 0 30px 60px -30px rgba(255, 140, 0, 0.25);
+        padding: 36px 28px 28px;
+        text-align: center;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: -160px;
+        right: -120px;
+        width: 360px;
+        height: 360px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(255, 154, 60, 0.25), transparent 70%);
+        pointer-events: none;
+      }
+      .icon-circle {
+        position: relative;
+        display: inline-grid;
+        place-items: center;
+        width: 80px;
+        height: 80px;
+        border-radius: 999px;
+        margin-bottom: 16px;
+      }
+      .icon-circle.success {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        box-shadow: 0 20px 40px -15px rgba(34, 197, 94, 0.55);
+      }
+      .icon-circle.failed {
+        background: linear-gradient(135deg, #f43f5e, #be123c);
+        box-shadow: 0 20px 40px -15px rgba(244, 63, 94, 0.55);
+      }
+      .icon-circle svg {
+        width: 38px;
+        height: 38px;
+        color: #fff;
+      }
+      h1 {
+        position: relative;
+        font-size: 28px;
+        line-height: 1.15;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0 0 8px;
+      }
+      .subtitle {
+        position: relative;
+        margin: 0 auto;
+        max-width: 420px;
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .summary {
+        position: relative;
+        margin: 28px 0 0;
+        text-align: left;
+        background: #fafafa;
+        border: 1px solid #f3f4f6;
+        border-radius: 16px;
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 64px 1fr;
+        gap: 16px;
+        align-items: center;
+      }
+      .summary-image {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #f3f4f6;
+        display: grid;
+        place-items: center;
+        color: #d1d5db;
+      }
+      .summary-image img {
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        object-fit: cover;
+      }
+      .summary-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #111827;
+        margin: 0 0 2px;
+        line-clamp: 1;
+        -webkit-line-clamp: 1;
+      }
+      .summary-shop {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 0;
+      }
+      .meta {
+        position: relative;
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px dashed #e5e7eb;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 18px;
+        text-align: left;
+      }
+      .meta-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: #9ca3af;
+        margin: 0 0 2px;
+      }
+      .meta-value {
+        font-size: 13px;
+        font-weight: 500;
+        color: #111827;
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+        word-break: break-all;
+      }
+      .actions {
+        position: relative;
         display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 28px;
+      }
+      .btn {
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-      }
-
-      .modal-content {
-        background: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        width: 400px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        text-align: center;
-      }
-
-      .modal-content h2 {
-        margin-top: 0;
-      }
-
-      .booking-details {
-        display: flex;
-        flex-direction: column;
-        margin: 20px 0;
-        text-align: center;
-      }
-
-      .booking-details p {
-        margin: 5px 0;
-      }
-
-      #back-buttons {
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
+        gap: 8px;
+        padding: 12px 22px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
         cursor: pointer;
-        font-size: 16px;
+        transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+        border: 1px solid transparent;
       }
-
-      #back-buttons:hover {
-        background-color: #0056b3;
+      .btn-primary {
+        background: #f97316;
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #ea580c;
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: #fff;
+        color: #111827;
+        border-color: #e5e7eb;
+      }
+      .btn-secondary:hover {
+        border-color: #fdba74;
+        color: #ea580c;
+      }
+      .next-steps {
+        margin-top: 32px;
+        background: #fff;
+        border: 1px solid #f3f4f6;
+        border-radius: 20px;
+        padding: 20px 24px;
+      }
+      .next-steps h3 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: #6b7280;
+        margin: 0 0 14px;
+        font-weight: 600;
+      }
+      .step {
+        display: flex;
+        gap: 12px;
+        padding: 8px 0;
+        font-size: 13px;
+        color: #4b5563;
+      }
+      .step + .step {
+        border-top: 1px dashed #f3f4f6;
+      }
+      .step-num {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #fff7ed;
+        color: #ea580c;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      footer {
+        text-align: center;
+        font-size: 11px;
+        color: #9ca3af;
+        margin-top: 24px;
       }
     </style>
   </head>
-  <body id="back-button">
-    <div class="modal-overlay">
-      <div class="modal-content">
-        <h2>Order {{success}}!</h2>
-        <p>{{greeting}}</p>
-        <div class="booking-details">
-          <p><strong>Order ID:</strong> {{orderId}}</p>
+  <body>
+    <div class="container">
+      <a href="{{clientUrl}}" class="brand">
+        <span class="brand-dot"></span>
+        Dokan Express
+      </a>
 
-          <!-- Add more details as needed -->
+      <section class="hero">
+        <span class="icon-circle {{accentClass}}">
+          <!-- Success: check; Failure: x. Server replaces the inner SVG via the same template literal below -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <h1>{{title}}</h1>
+        <p class="subtitle">{{subtitle}}</p>
+
+        <div class="summary">
+          <div class="summary-image">
+            <img src="{{productImage}}" alt="" onerror="this.style.display='none'" />
+          </div>
+          <div>
+            <p class="summary-name">{{productName}}</p>
+            <p class="summary-shop">Sold by {{shopName}}</p>
+          </div>
         </div>
-        <button id="back-buttons">Back to Home</button>
-      </div>
+
+        <div class="meta">
+          <div>
+            <p class="meta-label">Order ID</p>
+            <p class="meta-value">{{orderId}}</p>
+          </div>
+          <div>
+            <p class="meta-label">Placed</p>
+            <p class="meta-value">{{placedAt}}</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <a class="btn btn-primary" href="{{clientUrl}}/account/order-history">
+            Track my order
+          </a>
+          <a class="btn btn-secondary" href="{{clientUrl}}">
+            Continue shopping
+          </a>
+        </div>
+      </section>
+
+      <section class="next-steps">
+        <h3>What happens next</h3>
+        <div class="step">
+          <span class="step-num">1</span>
+          <span>The seller confirms your order — usually within an hour.</span>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <span>You'll get a notification the moment it ships, and another on delivery.</span>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <span>Anything off? Open a return from <em>My Orders</em> within 7 days of delivery.</span>
+        </div>
+      </section>
+
+      <footer>
+        Receipt and tracking updates will also appear in your notifications.
+      </footer>
     </div>
+
     <script>
-      document.getElementById("back-button").addEventListener("click", () => {
-        window.location.href =
-          // "https://e-commerce-rho-nine.vercel.app/account/order-history";
-          window.location.href = "http://localhost:3001/account/order-history";
-      });
+      // Swap to an X icon on failed state.
+      (function () {
+        var isSuccess = "{{isSuccess}}" === "true";
+        if (!isSuccess) {
+          var svg = document.querySelector(".icon-circle svg");
+          if (svg) {
+            svg.innerHTML =
+              '<line x1="18" y1="6" x2="6" y2="18"></line>' +
+              '<line x1="6" y1="6" x2="18" y2="18"></line>';
+          }
+        }
+      })();
     </script>
   </body>
 </html>
