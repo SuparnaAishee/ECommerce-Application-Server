@@ -9,12 +9,46 @@ import { IOrder } from "./order.interface";
 import { IPaginationOptions } from "../../interfaces/pagination";
 import { paginationHelper } from "../../helpers/paginationHelper";
 
-const createOrder = async (
-  user: IUser,
-  payload: { coupon?: string; productId: string; quantity: number }[]
-) => {
+type CreateOrderItem = {
+  coupon?: string;
+  productId: string;
+  quantity: number;
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
+  saveAddressToProfile?: boolean;
+};
+
+const createOrder = async (user: IUser, payload: CreateOrderItem[]) => {
   const userData = await prisma.user.findUnique({ where: { id: user.id } });
   if (!userData) throw new AppError(httpStatus.NOT_FOUND, "User not found");
+
+  // Pull shipping info from the first item (the checkout page sends the same
+  // shipping block on every cart item)
+  const shippingName =
+    payload[0]?.shippingName?.trim() || userData.name || "";
+  const shippingPhone =
+    payload[0]?.shippingPhone?.trim() || userData.phone || "";
+  const shippingAddress =
+    payload[0]?.shippingAddress?.trim() || userData.address || "";
+
+  if (!shippingAddress) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Shipping address is required",
+    );
+  }
+
+  // Optionally persist this address as the customer's default
+  if (payload[0]?.saveAddressToProfile) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        address: shippingAddress,
+        phone: shippingPhone || userData.phone,
+      },
+    });
+  }
 
   // Validate Coupon
   const transactionId = `TXN-${Date.now()}`;
@@ -104,6 +138,9 @@ const createOrder = async (
         userId: user.id,
         shopId: product.shopId,
         productId: product.id,
+        shippingName,
+        shippingPhone,
+        shippingAddress,
       });
     }
 
@@ -114,10 +151,10 @@ const createOrder = async (
   const paymentData = {
     transactionId,
     amount: totalAmount,
-    customerName: userData?.name,
-    customerAddress: "N/A",
+    customerName: shippingName || userData?.name,
+    customerAddress: shippingAddress,
     customerEmail: userData?.email,
-    customerPhone: "N/A",
+    customerPhone: shippingPhone || "N/A",
   };
 
   const paymentSession = await initiatePayment(paymentData);

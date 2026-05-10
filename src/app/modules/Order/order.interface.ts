@@ -9,4 +9,7 @@ export interface IOrder {
   userId: string;
   shopId: string;
   productId: string;
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
 }

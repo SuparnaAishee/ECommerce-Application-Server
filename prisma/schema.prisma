@@ -159,6 +159,9 @@ model Order {
   quantity        Int
   isPaid          Boolean     @default(false)
   status          OrderStatus @default(PENDING)
+  shippingAddress String?
+  shippingPhone   String?
+  shippingName    String?
   userId          String
   user            User        @relation(fields: [userId], references: [id])
   shopId          String
