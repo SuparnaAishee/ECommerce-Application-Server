@@ -126,12 +126,14 @@ const getAllProduct = async (
   }
 
   if (category) {
+    const looksLikeUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        String(category),
+      );
     andCondition.push({
-      category: {
-        name: {
-          contains: category,
-        },
-      },
+      category: looksLikeUuid
+        ? { id: String(category) }
+        : { name: { contains: String(category), mode: "insensitive" } },
     });
   }
 
