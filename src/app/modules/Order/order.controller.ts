@@ -74,6 +74,46 @@ const deleteMyOrder = catchAsync(async (req, res) => {
   });
 });
 
+const advanceVendorStatus = catchAsync(async (req, res) => {
+  const result = await orderService.advanceOrderStatusByVendor(
+    req.user,
+    req.params.orderId,
+    req.body,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Order marked ${req.body.status}`,
+    data: result,
+  });
+});
+
+const cancelMyOrder = catchAsync(async (req, res) => {
+  const result = await orderService.cancelMyOrder(
+    req.user,
+    req.params.orderId,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Order cancelled",
+    data: result,
+  });
+});
+
+const requestReturn = catchAsync(async (req, res) => {
+  const result = await orderService.requestReturnByCustomer(
+    req.user,
+    req.params.orderId,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Return requested",
+    data: result,
+  });
+});
+
 export const orderController = {
   createOrder,
   getMyOrders,
@@ -81,4 +121,7 @@ export const orderController = {
   getAllOrders,
   updateOrderStatus,
   getShopOrder,
+  advanceVendorStatus,
+  cancelMyOrder,
+  requestReturn,
 };

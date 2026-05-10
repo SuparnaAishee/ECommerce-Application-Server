@@ -306,6 +306,100 @@ const updateOrderStatus = async (
   return orders;
 };
 
+// Vendor-driven status transitions. Each vendor can only advance orders that
+// belong to one of *their* shops. We restrict which target statuses each role
+// is allowed to set.
+const VENDOR_ALLOWED_STATUSES: OrderStatus[] = [
+  OrderStatus.CONFIRMED,
+  OrderStatus.SHIPPED,
+  OrderStatus.DELIVERED,
+  OrderStatus.COMPLETED,
+  OrderStatus.RETURNED,
+];
+
+const advanceOrderStatusByVendor = async (
+  user: IUser,
+  orderId: string,
+  payload: { status: OrderStatus },
+) => {
+  if (!VENDOR_ALLOWED_STATUSES.includes(payload.status)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Status not allowed");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { shop: true },
+  });
+  if (!order) throw new AppError(httpStatus.NOT_FOUND, "Order not found");
+
+  if (order.shop?.userId !== user.id) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "You can only update orders from your own shop",
+    );
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { status: payload.status },
+  });
+};
+
+const cancelMyOrder = async (user: IUser, orderId: string) => {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new AppError(httpStatus.NOT_FOUND, "Order not found");
+  if (order.userId !== user.id) {
+    throw new AppError(httpStatus.FORBIDDEN, "Not your order");
+  }
+  if (
+    order.status !== OrderStatus.PENDING &&
+    order.status !== OrderStatus.CONFIRMED
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This order can no longer be cancelled",
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const product = await tx.product.findUnique({
+      where: { id: order.productId },
+    });
+    if (product) {
+      await tx.product.update({
+        where: { id: order.productId },
+        data: { inventory: product.inventory + order.quantity },
+      });
+    }
+    return tx.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.CANCELLED },
+    });
+  });
+};
+
+const requestReturnByCustomer = async (user: IUser, orderId: string) => {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new AppError(httpStatus.NOT_FOUND, "Order not found");
+  if (order.userId !== user.id) {
+    throw new AppError(httpStatus.FORBIDDEN, "Not your order");
+  }
+  if (
+    order.status !== OrderStatus.DELIVERED &&
+    order.status !== OrderStatus.COMPLETED
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Return can only be requested for delivered orders",
+    );
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { status: OrderStatus.RETURN_REQUESTED },
+  });
+};
+
 export const orderService = {
   createOrder,
   getMyOrders,
@@ -313,4 +407,7 @@ export const orderService = {
   getAllOrders,
   geShopOrders,
   updateOrderStatus,
+  advanceOrderStatusByVendor,
+  cancelMyOrder,
+  requestReturnByCustomer,
 };

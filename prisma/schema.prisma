@@ -202,8 +202,13 @@ enum Role {
 
 enum OrderStatus {
   PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
   COMPLETED
   CANCELLED
+  RETURN_REQUESTED
+  RETURNED
 }
 
 enum UserStatus {

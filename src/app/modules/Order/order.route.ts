@@ -28,6 +28,24 @@ router.delete(
   orderController.deleteMyOrder
 );
 router.patch(
+  "/vendor/:orderId/status",
+  auth(Role.VENDOR),
+  orderController.advanceVendorStatus
+);
+
+router.patch(
+  "/my-order/:orderId/cancel",
+  auth(Role.USER),
+  orderController.cancelMyOrder
+);
+
+router.patch(
+  "/my-order/:orderId/return",
+  auth(Role.USER),
+  orderController.requestReturn
+);
+
+router.patch(
   "/:orderId",
   auth(Role.ADMIN),
   validateRequest(orderValidation.updateOrder),
