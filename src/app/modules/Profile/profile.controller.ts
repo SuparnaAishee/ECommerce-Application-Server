@@ -28,7 +28,19 @@ const getMyProfile = catchAsync(async (req, res) => {
   });
 });
 
+const getMyStats = catchAsync(async (req, res) => {
+  const result = await profileService.getMyStats(req.user);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Stats retrieved successfully",
+    data: result,
+  });
+});
+
 export const profileController = {
   updateProfile,
   getMyProfile,
+  getMyStats,
 };

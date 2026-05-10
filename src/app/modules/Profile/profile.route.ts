@@ -23,4 +23,10 @@ router.get(
   profileController.getMyProfile
 );
 
+router.get(
+  "/my-stats",
+  auth(Role.USER, Role.ADMIN, Role.VENDOR),
+  profileController.getMyStats
+);
+
 export const profileRoutes = router;
