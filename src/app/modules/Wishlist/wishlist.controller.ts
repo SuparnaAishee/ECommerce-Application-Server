@@ -1,28 +1,42 @@
-import { Request, Response } from "express";
+import httpStatus from "http-status";
+import catchAsync from "../../../utils/catchAsync";
+import sendResponse from "../../../utils/sendResponse";
 import { wishlistService } from "./wishlist.service";
 
-const addToWishlist = async (req: Request, res: Response) => {
+const addToWishlist = catchAsync(async (req, res) => {
   const { productId } = req.body;
-  const user = req.user;
+  const result = await wishlistService.addToWishlist(req.user, productId);
 
-  const wishlistItem = await wishlistService.addToWishlist(user, productId);
-  res.status(201).json({ message: "Product added to wishlist", wishlistItem });
-};
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Product added to wishlist",
+    data: result,
+  });
+});
 
-const getWishlist = async (req: Request, res: Response) => {
-  const user = req.user;
+const getWishlist = catchAsync(async (req, res) => {
+  const result = await wishlistService.getWishlistByUser(req.user);
 
-  const wishlist = await wishlistService.getWishlistByUser(user);
-  res.status(200).json({ wishlist });
-};
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Wishlist retrieved successfully",
+    data: result,
+  });
+});
 
-const removeFromWishlist = async (req: Request, res: Response) => {
+const removeFromWishlist = catchAsync(async (req, res) => {
   const { productId } = req.params;
-  const user = req.user;
+  await wishlistService.removeFromWishlist(req.user, productId);
 
-  await wishlistService.removeFromWishlist(user, productId);
-  res.status(200).json({ message: "Product removed from wishlist" });
-};
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Product removed from wishlist",
+    data: null,
+  });
+});
 
 export const wishlistController = {
   addToWishlist,
