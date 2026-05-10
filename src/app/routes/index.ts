@@ -16,6 +16,7 @@ import { comparisonRoutes } from "../modules/Comparison/comparison.route";
 import { wishlistRoutes } from "../modules/Wishlist/wishlist.routes";
 import { chatRoutes } from "../modules/Chat/chat.route";
 import { notificationRoutes } from "../modules/Notification/notification.route";
+import { statsRoutes } from "../modules/Stats/stats.route";
 
 const router = Router();
 
@@ -87,6 +88,10 @@ const moduleRoutes = [
   {
     path: "/notifications",
     route: notificationRoutes,
+  },
+  {
+    path: "/stats",
+    route: statsRoutes,
   },
 ];
 
