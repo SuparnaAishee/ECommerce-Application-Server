@@ -541,14 +541,16 @@ async function main() {
         role: Role.VENDOR,
       },
     });
+    const extraFollowers = randInt(120, 2400);
     const shopRow = await prisma.shop.upsert({
       where: { userId: vendor.id },
-      update: { shopDetails: shop.blurb },
+      update: { shopDetails: shop.blurb, extraFollowers },
       create: {
         userId: vendor.id,
         shopName: shop.name,
         shopDetails: shop.blurb,
         shopLogo: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(shop.name)}&backgroundColor=fff7ed,ffedd5,fed7aa&fontFamily=Helvetica`,
+        extraFollowers,
       },
     });
     shopsByName.set(shop.name, { id: shopRow.id, name: shop.name });

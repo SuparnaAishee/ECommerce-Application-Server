@@ -55,9 +55,17 @@ const getAllShop = async (options: IPaginationOptions) => {
         : { createdAt: "desc" },
     include: {
       user: { select: { id: true, name: true, email: true, role: true } },
+      _count: { select: { follower: true, products: true } },
     },
   });
   const total = await prisma.shop.count();
+
+  const data = result.map((shop) => ({
+    ...shop,
+    followerCount:
+      (shop._count?.follower ?? 0) + (shop.extraFollowers ?? 0),
+    productCount: shop._count?.products ?? 0,
+  }));
 
   return {
     meta: {
@@ -65,7 +73,7 @@ const getAllShop = async (options: IPaginationOptions) => {
       page,
       limit,
     },
-    data: result,
+    data,
   };
 };
 
@@ -111,11 +119,14 @@ const getSingleShop = async (id: string) => {
     include: {
       products: true,
       follower: true,
-      user: true,
+      user: { select: { id: true, name: true, email: true } },
     },
   });
 
-  return shop;
+  if (!shop) return null;
+
+  const followerCount = (shop.follower?.length ?? 0) + (shop.extraFollowers ?? 0);
+  return { ...shop, followerCount };
 };
 
 const updateMyShop = async (
