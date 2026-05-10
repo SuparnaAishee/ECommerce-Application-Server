@@ -1,6 +1,7 @@
-import { UserShopFollow } from "@prisma/client";
+import { NotificationType, UserShopFollow } from "@prisma/client";
 import prisma from "../../helpers/prisma";
 import { IUser } from "../User/user.interface";
+import { notificationService } from "../Notification/notification.service";
 
 const createShopFollowUser = async (user: IUser, payload: UserShopFollow) => {
   const isAlreadyFollowed = await prisma.userShopFollow.findUnique({
@@ -27,6 +28,24 @@ const createShopFollowUser = async (user: IUser, payload: UserShopFollow) => {
   const result = await prisma.userShopFollow.create({
     data: payload,
   });
+
+  // Notify the vendor (shop owner) that someone followed their shop.
+  const shop = await prisma.shop.findUnique({
+    where: { id: payload.shopId },
+    select: { userId: true, shopName: true },
+  });
+  if (shop?.userId && shop.userId !== user.id) {
+    notificationService
+      .create({
+        userId: shop.userId,
+        type: NotificationType.SHOP,
+        title: `${user.name ?? "Someone"} followed your shop`,
+        body: `${shop.shopName ?? "Your shop"} just gained a new follower.`,
+        link: "/vendor",
+      })
+      .catch(() => {});
+  }
+
   return { result, message: "Follow the shop successfully" };
 };
 

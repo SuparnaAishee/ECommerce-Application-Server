@@ -1,8 +1,9 @@
-import { Review } from "@prisma/client";
+import { NotificationType, Review } from "@prisma/client";
 import { IUser } from "../User/user.interface";
 import prisma from "../../helpers/prisma";
 import { AppError } from "../../errors/AppError";
 import httpStatus from "http-status";
+import { notificationService } from "../Notification/notification.service";
 
 const addReviewToProduct = async (user: IUser, payload: Review) => {
   const product = await prisma.product.findUnique({
@@ -62,6 +63,26 @@ const addReviewToProduct = async (user: IUser, payload: Review) => {
     });
     return review;
   });
+
+  // Notify the vendor who owns the product
+  const productWithShop = await prisma.product.findUnique({
+    where: { id: payload.productId },
+    select: { name: true, shop: { select: { userId: true } } },
+  });
+  if (
+    productWithShop?.shop?.userId &&
+    productWithShop.shop.userId !== user.id
+  ) {
+    notificationService
+      .create({
+        userId: productWithShop.shop.userId,
+        type: NotificationType.REVIEW,
+        title: `New review on ${productWithShop.name}`,
+        body: `${user.name ?? "A customer"} left a ${payload.rating}-star review.`,
+        link: "/vendor/manage-product",
+      })
+      .catch(() => {});
+  }
 
   return result;
 };

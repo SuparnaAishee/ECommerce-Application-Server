@@ -2,6 +2,8 @@ import { join } from "path";
 import { verifyPayment } from "./payment.utils";
 import { readFileSync } from "fs";
 import prisma from "../../helpers/prisma";
+import { NotificationType } from "@prisma/client";
+import { notificationService } from "../Notification/notification.service";
 
 const confirmationService = async (transactionId: string, status: string) => {
   let greeting;
@@ -29,6 +31,18 @@ const confirmationService = async (transactionId: string, status: string) => {
         },
       });
     });
+
+    if (order?.userId) {
+      notificationService
+        .create({
+          userId: order.userId,
+          type: NotificationType.ORDER_STATUS,
+          title: "Payment confirmed",
+          body: `Payment for ${transactionId} is confirmed. Your order is now in the queue.`,
+          link: "/account/order-history",
+        })
+        .catch(() => {});
+    }
   }
 
   const filePath = join(__dirname, "../paymentConfirmation/index.html");

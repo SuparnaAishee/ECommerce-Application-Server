@@ -5,6 +5,9 @@ import { notificationController } from "./notification.controller";
 
 const router = Router();
 
+// SSE stream — auth happens inside via ?token= (EventSource can't set headers)
+router.get("/stream", notificationController.stream);
+
 router.get(
   "/",
   auth(Role.USER, Role.VENDOR, Role.ADMIN),

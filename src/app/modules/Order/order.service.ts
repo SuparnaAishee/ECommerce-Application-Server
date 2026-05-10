@@ -174,6 +174,32 @@ const createOrder = async (user: IUser, payload: CreateOrderItem[]) => {
     })
     .catch(() => {});
 
+  // Notify each vendor whose shop has at least one line in this order
+  const shopOwnerIds = new Set<string>();
+  const shopsTouched = new Set<string>();
+  for (const item of payload) {
+    const product = products.find((p) => p.id === item.productId);
+    if (product?.shopId) shopsTouched.add(product.shopId);
+  }
+  if (shopsTouched.size > 0) {
+    const shops = await prisma.shop.findMany({
+      where: { id: { in: Array.from(shopsTouched) } },
+      select: { userId: true },
+    });
+    for (const s of shops) shopOwnerIds.add(s.userId);
+  }
+  for (const ownerId of shopOwnerIds) {
+    notificationService
+      .create({
+        userId: ownerId,
+        type: NotificationType.ORDER_PLACED,
+        title: "New order on your shop",
+        body: `${shippingName || userData?.name || "A customer"} placed an order. Tap to fulfill.`,
+        link: "/vendor/order-history",
+      })
+      .catch(() => {});
+  }
+
   return paymentSession;
 };
 
@@ -389,7 +415,7 @@ const cancelMyOrder = async (user: IUser, orderId: string) => {
     );
   }
 
-  return prisma.$transaction(async (tx) => {
+  const cancelled = await prisma.$transaction(async (tx) => {
     const product = await tx.product.findUnique({
       where: { id: order.productId },
     });
@@ -404,6 +430,25 @@ const cancelMyOrder = async (user: IUser, orderId: string) => {
       data: { status: OrderStatus.CANCELLED },
     });
   });
+
+  // Notify the vendor; customer initiated this so no self-notification.
+  const shop = await prisma.shop.findUnique({
+    where: { id: order.shopId },
+    select: { userId: true, shopName: true },
+  });
+  if (shop?.userId) {
+    notificationService
+      .create({
+        userId: shop.userId,
+        type: NotificationType.ORDER_STATUS,
+        title: "Order cancelled by customer",
+        body: `Order ${order.transactionId} on ${shop.shopName ?? "your shop"} was cancelled. Inventory has been restocked.`,
+        link: "/vendor/order-history",
+      })
+      .catch(() => {});
+  }
+
+  return cancelled;
 };
 
 const requestReturnByCustomer = async (user: IUser, orderId: string) => {
@@ -422,10 +467,38 @@ const requestReturnByCustomer = async (user: IUser, orderId: string) => {
     );
   }
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: { status: OrderStatus.RETURN_REQUESTED },
   });
+
+  notificationService
+    .create({
+      userId: user.id,
+      type: NotificationType.ORDER_STATUS,
+      title: "Return requested",
+      body: `We logged your return request for order ${order.transactionId}. The vendor will reach out soon.`,
+      link: "/account/order-history",
+    })
+    .catch(() => {});
+
+  const shop = await prisma.shop.findUnique({
+    where: { id: order.shopId },
+    select: { userId: true, shopName: true },
+  });
+  if (shop?.userId) {
+    notificationService
+      .create({
+        userId: shop.userId,
+        type: NotificationType.ORDER_STATUS,
+        title: "Return requested by customer",
+        body: `Customer requested a return on order ${order.transactionId}.`,
+        link: "/vendor/order-history",
+      })
+      .catch(() => {});
+  }
+
+  return updated;
 };
 
 export const orderService = {

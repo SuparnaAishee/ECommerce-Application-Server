@@ -1,6 +1,7 @@
 import { NotificationType } from "@prisma/client";
 import prisma from "../../helpers/prisma";
 import { IUser } from "../User/user.interface";
+import { broadcastToUser } from "./notification.events";
 
 type CreatePayload = {
   userId: string;
@@ -11,7 +12,10 @@ type CreatePayload = {
 };
 
 const create = async (payload: CreatePayload) => {
-  return prisma.notification.create({ data: payload });
+  const row = await prisma.notification.create({ data: payload });
+  // Fan out to any open SSE streams for this user — best-effort, fire & forget
+  broadcastToUser(payload.userId, { type: "notification", notification: row });
+  return row;
 };
 
 const getMyNotifications = async (
