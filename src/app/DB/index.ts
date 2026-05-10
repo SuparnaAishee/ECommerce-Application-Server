@@ -1,25 +1,24 @@
 import { Role } from "@prisma/client";
+import bcrypt from "bcrypt";
 import prisma from "../helpers/prisma";
 
-const admin = {
-  password: "1234",
-  name: "Sabbir Hossain Shanto",
-  email: "sabbirshnt@gmail.com",
-  role: Role.ADMIN,
-};
+const DEMO_ADMIN_EMAIL = "admin@dokanxpress.dev";
+const DEMO_ADMIN_PASSWORD = "password123";
 
 const seedAdmin = async () => {
-  const isAdminExist = await prisma.user.findFirst({
-    where: {
+  const hashed = await bcrypt.hash(DEMO_ADMIN_PASSWORD, 12);
+  // Upsert keeps this idempotent even if an older seed created the row
+  // with a plaintext password.
+  await prisma.user.upsert({
+    where: { email: DEMO_ADMIN_EMAIL },
+    update: { password: hashed, role: Role.ADMIN },
+    create: {
+      email: DEMO_ADMIN_EMAIL,
+      name: "Dokan Admin",
+      password: hashed,
       role: Role.ADMIN,
     },
   });
-
-  if (!isAdminExist) {
-    await prisma.user.create({
-      data: admin,
-    });
-  }
 };
 
 export default seedAdmin;
