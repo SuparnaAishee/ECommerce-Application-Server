@@ -19,7 +19,7 @@ const allowedOrigins = config.cors_allowed_origins?.length
 const corsOptions: CorsOptions = {
   credentials: true,
   origin(origin, callback) {
-    if (!origin) return callback(null, true);
+    if (!origin || origin === "null") return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error(`CORS: origin ${origin} is not allowed`));
   },

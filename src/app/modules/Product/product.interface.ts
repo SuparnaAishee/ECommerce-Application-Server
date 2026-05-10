@@ -3,4 +3,5 @@ export interface IProductQuery {
   price?: number | undefined;
   category?: string | undefined;
   searchTerm?: string | undefined;
+  isFlashSale?: string | boolean | undefined;
 }

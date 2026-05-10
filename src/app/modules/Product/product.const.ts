@@ -4,5 +4,6 @@ export const productFilterableFields = [
   "searchTerm",
   "category",
   "shop",
+  "isFlashSale",
 ];
 export const productSearchableFields = ["name"];

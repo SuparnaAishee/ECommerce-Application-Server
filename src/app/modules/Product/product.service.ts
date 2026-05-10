@@ -68,12 +68,16 @@ const getAllProduct = async (
 ) => {
   const { limit, skip, sortBy, sortOrder, page } =
     paginationHelper.calculatePagination(options);
-  const { searchTerm, category, ...restQueries } = query;
+  const { searchTerm, category, isFlashSale, ...restQueries } = query;
   const andCondition: Prisma.ProductWhereInput[] = [];
 
-  andCondition.push({
-    isFlashSale: false,
-  });
+  if (typeof isFlashSale !== "undefined") {
+    andCondition.push({
+      isFlashSale: String(isFlashSale) === "true",
+    });
+  } else {
+    andCondition.push({ isFlashSale: false });
+  }
 
   if (searchTerm == "recentViewedProduct") {
     const data = await prisma.product.findMany({

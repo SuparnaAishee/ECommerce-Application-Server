@@ -53,7 +53,9 @@ const getAllShop = async (options: IPaginationOptions) => {
       options.sortBy && options.sortOrder
         ? { [options.sortBy]: options.sortOrder }
         : { createdAt: "desc" },
-    include: { user: true },
+    include: {
+      user: { select: { id: true, name: true, email: true, role: true } },
+    },
   });
   const total = await prisma.shop.count();
 

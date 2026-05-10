@@ -18,7 +18,7 @@ router.post(
   shopController.createShop
 );
 
-router.get("/", auth(Role.ADMIN), shopController.getAllShop);
+router.get("/", shopController.getAllShop);
 router.get("/single-shop/:shopId", shopController.getSingleShop);
 router.get("/my-shop", auth(Role.VENDOR), shopController.getMyShop);
 
