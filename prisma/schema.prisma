@@ -30,6 +30,7 @@ model User {
   comparison   Comparison[]
 
   Wishlist Wishlist[]
+  notifications Notification[]
 }
 
 model Shop {
@@ -119,6 +120,29 @@ model   Wishlist {
   product   Product @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_STATUS
+  REVIEW
+  SHOP
+  SYSTEM
 }
 
 

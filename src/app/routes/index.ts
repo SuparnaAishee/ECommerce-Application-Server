@@ -15,6 +15,7 @@ import { profileRoutes } from "../modules/Profile/profile.route";
 import { comparisonRoutes } from "../modules/Comparison/comparison.route";
 import { wishlistRoutes } from "../modules/Wishlist/wishlist.routes";
 import { chatRoutes } from "../modules/Chat/chat.route";
+import { notificationRoutes } from "../modules/Notification/notification.route";
 
 const router = Router();
 
@@ -82,6 +83,10 @@ const moduleRoutes = [
   {
     path: "/chat",
     route: chatRoutes,
+  },
+  {
+    path: "/notifications",
+    route: notificationRoutes,
   },
 ];
 

@@ -3,11 +3,12 @@ import { IUser } from "../User/user.interface";
 import { AppError } from "../../errors/AppError";
 import httpStatus from "http-status";
 import { initiatePayment } from "../payment/payment.utils";
-import { DiscountType, OrderStatus } from "@prisma/client";
+import { DiscountType, NotificationType, OrderStatus } from "@prisma/client";
 import { calculateDiscount } from "../../../utils/calculateDiscount";
 import { IOrder } from "./order.interface";
 import { IPaginationOptions } from "../../interfaces/pagination";
 import { paginationHelper } from "../../helpers/paginationHelper";
+import { notificationService } from "../Notification/notification.service";
 
 type CreateOrderItem = {
   coupon?: string;
@@ -158,6 +159,21 @@ const createOrder = async (user: IUser, payload: CreateOrderItem[]) => {
   };
 
   const paymentSession = await initiatePayment(paymentData);
+
+  // Fire a single "Order placed" notification per checkout — best-effort,
+  // never block the response.
+  notificationService
+    .create({
+      userId: user.id,
+      type: NotificationType.ORDER_PLACED,
+      title: "Order placed",
+      body: `Transaction ${transactionId} created for ${payload.length} item${
+        payload.length === 1 ? "" : "s"
+      }. We'll let you know when it ships.`,
+      link: "/account/order-history",
+    })
+    .catch(() => {});
+
   return paymentSession;
 };
 
@@ -339,10 +355,22 @@ const advanceOrderStatusByVendor = async (
     );
   }
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: { status: payload.status },
   });
+
+  notificationService
+    .create({
+      userId: order.userId,
+      type: NotificationType.ORDER_STATUS,
+      title: `Order ${payload.status.toLowerCase()}`,
+      body: `Your order with ${order.shop?.shopName ?? "the shop"} is now ${payload.status.toLowerCase()}.`,
+      link: "/account/order-history",
+    })
+    .catch(() => {});
+
+  return updated;
 };
 
 const cancelMyOrder = async (user: IUser, orderId: string) => {
