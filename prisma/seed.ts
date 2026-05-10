@@ -84,42 +84,11 @@ const DUMMYJSON_CATEGORY_MAP: Record<string, string[]> = {
 // with tags that reliably hit on-target Flickr photography.
 type Backfill = { name: string; tag: string; brand: string; price: number };
 
-const BACKFILL: Record<string, Backfill[]> = {
-  Electronics: [
-    { name: "Wireless Bluetooth Earbuds Pro", tag: "earbuds,bluetooth", brand: "Anker", price: 79 },
-    { name: "Over-ear Noise-Cancelling Headphones", tag: "headphones,audio", brand: "Sony", price: 249 },
-    { name: "Smartwatch Fitness Tracker", tag: "smartwatch,fitness", brand: "Garmin", price: 199 },
-    { name: "Portable Bluetooth Speaker IPX7", tag: "speaker,bluetooth", brand: "JBL", price: 79 },
-    { name: "Power Bank 20000mAh USB-C", tag: "powerbank,charger", brand: "Anker", price: 49 },
-    { name: "Action Camera 4K Waterproof", tag: "action,camera", brand: "GoPro", price: 349 },
-    { name: "Mini Drone with HD Camera", tag: "drone,camera", brand: "DJI", price: 299 },
-    { name: "Streaming Stick 4K HDR", tag: "streaming,tv", brand: "Roku", price: 49 },
-  ],
-  Mobile: [
-    { name: "Galaxy Mid-Range Phone 128GB", tag: "smartphone,phone", brand: "Samsung", price: 349 },
-    { name: "Compact Flagship Phone 256GB", tag: "smartphone,iphone", brand: "Apple", price: 999 },
-    { name: "Budget Android Phone 64GB", tag: "android,phone", brand: "Xiaomi", price: 179 },
-    { name: "Foldable Smartphone 512GB", tag: "foldable,phone", brand: "Samsung", price: 1299 },
-    { name: "Gaming Phone 12GB RAM", tag: "gaming,phone", brand: "ASUS ROG", price: 749 },
-    { name: "Rugged Outdoor Phone IP68", tag: "rugged,phone", brand: "AGM", price: 299 },
-  ],
-  "Computers & Laptops": [
-    { name: "Ultra-thin 14\" i7 Laptop 16GB", tag: "laptop,computer", brand: "Dell", price: 1199 },
-    { name: "Gaming Laptop RTX 4060", tag: "gaming,laptop", brand: "ASUS", price: 1499 },
-    { name: "Convertible 2-in-1 Laptop 13\"", tag: "convertible,laptop", brand: "Lenovo", price: 899 },
-    { name: "Mechanical Keyboard RGB", tag: "mechanical,keyboard", brand: "Razer", price: 119 },
-    { name: "Wireless Mouse Ergonomic", tag: "mouse,wireless", brand: "Logitech", price: 49 },
-    { name: "27\" 4K Monitor IPS", tag: "monitor,4k,desk", brand: "LG", price: 379 },
-    { name: "USB-C Hub 8-in-1", tag: "usb,hub,cables", brand: "Anker", price: 39 },
-    { name: "External SSD 1TB Portable", tag: "ssd,external,drive", brand: "Samsung", price: 119 },
-    { name: "Webcam 1080p Streaming", tag: "webcam,camera", brand: "Logitech", price: 79 },
-    { name: "Laptop Stand Aluminum Adjustable", tag: "laptop,stand,desk", brand: "Rain Design", price: 59 },
-    { name: "Noise-Cancelling USB Microphone", tag: "microphone,desk", brand: "Blue Yeti", price: 129 },
-    { name: "Mesh Office Chair Ergonomic", tag: "office,chair,desk", brand: "Herman Miller", price: 599 },
-    { name: "Laptop Cooling Pad RGB", tag: "laptop,cooling", brand: "TopMate", price: 35 },
-    { name: "Drawing Tablet Pen Display", tag: "drawing,tablet,wacom", brand: "Wacom", price: 219 },
-  ],
-};
+// Backfill is intentionally empty for Mobile / Electronics / Computers & Laptops.
+// Earlier we used loremflickr tags to pad these but Flickr kept returning unrelated
+// photos (e.g. a generic camera for "Mini Drone with HD Camera"). Better to ship
+// fewer products with real DummyJSON imagery than 20+ with off-target stock photos.
+const BACKFILL: Record<string, Backfill[]> = {};
 
 // ----- DummyJSON ingestion ---------------------------------------------------
 
