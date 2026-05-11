@@ -78,7 +78,9 @@ const forgotPassword = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Please check your email to reset password",
+    message: result.emailSent
+      ? "Reset link sent — check your inbox."
+      : "Reset link ready (email delivery is currently unavailable, use the link below).",
     data: result,
   });
 });
