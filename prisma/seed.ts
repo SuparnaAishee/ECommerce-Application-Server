@@ -57,7 +57,7 @@ const CATEGORY_TO_SHOP: Record<string, string> = {
   "Fashion - Men": "UrbanThread",
   "Fashion - Women": "UrbanThread",
   Books: "Casa Mia",
-  Toys: "WildPeak",
+  "Sports & Outdoor": "WildPeak",
 };
 
 const DUMMYJSON_CATEGORY_MAP: Record<string, string[]> = {
@@ -77,6 +77,7 @@ const DUMMYJSON_CATEGORY_MAP: Record<string, string[]> = {
     "womens-watches",
     "tops",
   ],
+  "Sports & Outdoor": ["sports-accessories"],
 };
 
 // When DummyJSON doesn't have enough products in a slug, append these curated
@@ -362,60 +363,6 @@ const fetchSkinCare = async (): Promise<CatalogueProduct[]> => {
   });
 };
 
-// ----- Toys curated catalogue -----------------------------------------------
-
-const TOY_SEEDS: { name: string; tag: string; brand: string; price: number }[] =
-  [
-    { name: "Classic LEGO Creator 3-in-1 Set", tag: "lego,toy", brand: "LEGO", price: 39.99 },
-    { name: "Wooden Building Blocks 100-piece", tag: "wooden,blocks,toy", brand: "Melissa & Doug", price: 24.5 },
-    { name: "Rubik's Cube 3×3 Speed Edition", tag: "rubiks,cube", brand: "Rubik's", price: 12.99 },
-    { name: "Plush Teddy Bear 30cm", tag: "teddy,bear,plush", brand: "Build-A-Bear", price: 18 },
-    { name: "Remote Control Off-road Truck", tag: "rc,car,toy", brand: "Traxxas", price: 79 },
-    { name: "Magnetic Tiles 64-piece Starter Set", tag: "magnetic,tiles,toy", brand: "Magna-Tiles", price: 49.5 },
-    { name: "Wooden Train Set with Tracks", tag: "train,wooden,toy", brand: "BRIO", price: 34 },
-    { name: "Educational Robot Kit for Kids", tag: "robot,kit,kids", brand: "LittleBits", price: 89 },
-    { name: "Soft Foam Building Blocks XL", tag: "foam,blocks,toy", brand: "Melissa & Doug", price: 29 },
-    { name: "Family Board Game · Strategy", tag: "boardgame,strategy", brand: "Hasbro", price: 32 },
-    { name: "Slime Science Lab Kit", tag: "slime,kit", brand: "National Geographic", price: 22.5 },
-    { name: "Plush Unicorn Stuffed Animal", tag: "unicorn,plush", brand: "Aurora", price: 19.99 },
-    { name: "Wooden Doll House 3-storey", tag: "dollhouse,wooden", brand: "KidKraft", price: 119 },
-    { name: "Toy Kitchen Cooking Playset", tag: "play,kitchen,toy", brand: "Step2", price: 64.99 },
-    { name: "Action Figure 12-inch Hero", tag: "action,figure,toy", brand: "Hasbro", price: 25 },
-    { name: "Mini RC Drone for Beginners", tag: "drone,toy", brand: "Holy Stone", price: 49 },
-    { name: "Jigsaw Puzzle 1000-piece Landscape", tag: "jigsaw,puzzle", brand: "Ravensburger", price: 16.5 },
-    { name: "Toddler Push & Ride Car", tag: "ride,car,toddler", brand: "Little Tikes", price: 54 },
-    { name: "Marble Run Tower Set", tag: "marble,run,toy", brand: "Quadrilla", price: 79 },
-    { name: "Soft Cloth Baby Activity Cube", tag: "baby,cube,activity", brand: "Manhattan Toy", price: 27 },
-    { name: "Stunt Scooter for Kids", tag: "scooter,kids", brand: "Razor", price: 89 },
-    { name: "Glow-in-the-dark Star Stickers", tag: "stars,glow,kids", brand: "Great Explorations", price: 9.99 },
-    { name: "Race Track 36-piece Loop Set", tag: "race,track,toy", brand: "Hot Wheels", price: 28 },
-    { name: "Plastic Tea Party Playset", tag: "tea,party,toy", brand: "Melissa & Doug", price: 22 },
-    { name: "Construction Crane Truck Toy", tag: "crane,truck,toy", brand: "Bruder", price: 65 },
-  ];
-
-const buildToys = (): CatalogueCategory => {
-  const products: CatalogueProduct[] = TOY_SEEDS.map((t) => {
-    const lock = stableLock(t.name);
-    return {
-      name: t.name,
-      description: `${t.name} by ${t.brand}. Tested for safety, designed to spark imagination.`,
-      price: t.price,
-      inventory: randInt(20, 200),
-      images: [
-        `https://loremflickr.com/600/600/${encodeURIComponent(t.tag)}?lock=${lock}`,
-        `https://loremflickr.com/600/600/${encodeURIComponent(t.tag)}?lock=${lock + 1}`,
-      ],
-      brand: t.brand,
-    };
-  });
-  return {
-    name: "Toys",
-    bannerImage: products[0].images[0],
-    shop: CATEGORY_TO_SHOP.Toys,
-    products,
-  };
-};
-
 // ----- Static seed data ------------------------------------------------------
 
 const SHOPS = [
@@ -440,7 +387,8 @@ const SHOPS = [
   {
     name: "WildPeak",
     email: "vendor4@dokanxpress.dev",
-    blurb: "Outdoor gear and family toys for weekend adventurers.",
+    blurb:
+      "Sports and outdoor gear for weekend adventurers — bags, bottles, gloves, helmets and the kit that travels with you.",
   },
   {
     name: "EverGlow",
@@ -516,7 +464,6 @@ async function main() {
       products: books,
     });
   }
-  catalogue.push(buildToys());
 
   console.log("clearing previous catalogue…");
   await prisma.review.deleteMany({});
