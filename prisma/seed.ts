@@ -54,10 +54,13 @@ const CATEGORY_TO_SHOP: Record<string, string> = {
   Grocery: "Casa Mia",
   "Skin Care": "EverGlow",
   Makeup: "EverGlow",
+  Fragrances: "EverGlow",
   "Fashion - Men": "UrbanThread",
   "Fashion - Women": "UrbanThread",
+  Watches: "UrbanThread",
   Books: "Casa Mia",
   "Sports & Outdoor": "WildPeak",
+  "Motorcycle Gear": "WildPeak",
 };
 
 const DUMMYJSON_CATEGORY_MAP: Record<string, string[]> = {
@@ -68,16 +71,18 @@ const DUMMYJSON_CATEGORY_MAP: Record<string, string[]> = {
   Grocery: ["groceries"],
   "Skin Care": ["skin-care"],
   Makeup: ["beauty"],
-  "Fashion - Men": ["mens-shirts", "mens-shoes", "mens-watches", "sunglasses"],
+  Fragrances: ["fragrances"],
+  "Fashion - Men": ["mens-shirts", "mens-shoes", "sunglasses"],
   "Fashion - Women": [
     "womens-bags",
     "womens-dresses",
     "womens-jewellery",
     "womens-shoes",
-    "womens-watches",
     "tops",
   ],
+  Watches: ["mens-watches", "womens-watches"],
   "Sports & Outdoor": ["sports-accessories"],
+  "Motorcycle Gear": ["motorcycle"],
 };
 
 // When DummyJSON doesn't have enough products in a slug, append these curated
@@ -90,6 +95,33 @@ type Backfill = { name: string; tag: string; brand: string; price: number };
 // photos (e.g. a generic camera for "Mini Drone with HD Camera"). Better to ship
 // fewer products with real DummyJSON imagery than 20+ with off-target stock photos.
 const BACKFILL: Record<string, Backfill[]> = {};
+
+// ----- Safety filter --------------------------------------------------------
+
+// Word-boundary blocklist for anything inappropriate to ship in a portfolio
+// demo. Word boundaries matter — "vibrant" must not match "bra".
+const BLOCKED_TERMS = [
+  "bra",
+  "bras",
+  "lingerie",
+  "panty",
+  "panties",
+  "thong",
+  "thongs",
+  "crotchless",
+  "fetish",
+  "erotic",
+  "xxx",
+  "arousal",
+  "orgasm",
+  "intimate",
+  "sensual",
+  "seductive",
+  "sexy",
+];
+const BLOCKED_RE = new RegExp(`\\b(${BLOCKED_TERMS.join("|")})\\b`, "i");
+const isProductSafe = (name?: string | null, description?: string | null) =>
+  !BLOCKED_RE.test(name ?? "") && !BLOCKED_RE.test(description ?? "");
 
 // ----- DummyJSON ingestion ---------------------------------------------------
 
@@ -137,7 +169,9 @@ const buildDummyCategories = (
   for (const [ourName, sourceSlugs] of Object.entries(
     DUMMYJSON_CATEGORY_MAP,
   )) {
-    const matching = products.filter((p) => sourceSlugs.includes(p.category));
+    const matching = products
+      .filter((p) => sourceSlugs.includes(p.category))
+      .filter((p) => isProductSafe(p.title, p.description));
     if (matching.length === 0 && !BACKFILL[ourName]) continue;
 
     const fromUpstream: CatalogueProduct[] = matching.map((p) => ({
@@ -206,6 +240,7 @@ const fetchBooks = async (): Promise<CatalogueProduct[]> => {
         const img =
           v.imageLinks?.thumbnail ?? v.imageLinks?.smallThumbnail ?? null;
         if (!v.title || !img) continue;
+        if (!isProductSafe(v.title, v.description)) continue;
         const httpsImg = img.replace(/^http:/, "https:");
         const author = v.authors?.[0] ?? v.publisher ?? "an established author";
         const desc =
@@ -270,6 +305,7 @@ const fetchMakeup = async (): Promise<CatalogueProduct[]> => {
       for (const item of items.slice(0, 4)) {
         if (!item.name || !item.image_link) continue;
         if (!/^https?:\/\//.test(item.image_link)) continue;
+        if (!isProductSafe(item.name, item.description)) continue;
         const httpsImg = item.image_link.replace(/^http:/, "https:");
         const price =
           parseFloat(item.price ?? "") ||
@@ -335,6 +371,7 @@ const fetchSkinCare = async (): Promise<CatalogueProduct[]> => {
         const img = item.image_url || item.image_front_url;
         if (!name || !img) continue;
         if (!/^https?:\/\//.test(img)) continue;
+        if (!isProductSafe(name, item.ingredients_text)) continue;
         const brand = (item.brands ?? "").split(",")[0]?.trim() || "Skincare Lab";
         out.push({
           name,
@@ -363,6 +400,222 @@ const fetchSkinCare = async (): Promise<CatalogueProduct[]> => {
   });
 };
 
+// ----- Tech bulk: Fake Store + Platzi + Wikipedia ---------------------------
+//
+// DummyJSON ships ~16 phones, ~5 laptops, ~3 tablets, ~23 mobile-accessories.
+// To hit 25+ in Mobile / Electronics / Computers & Laptops we top up from:
+//   • Fake Store API   — real CDN images, drives + monitors
+//   • Platzi Fake Store — real imgur-hosted photos, headphones / mice / etc.
+//   • Wikipedia REST    — real product pages with stable thumbnail URLs
+
+type TechBuckets = {
+  Mobile: CatalogueProduct[];
+  Electronics: CatalogueProduct[];
+  "Computers & Laptops": CatalogueProduct[];
+};
+
+type FakeStoreProduct = {
+  id: number;
+  title: string;
+  price: number;
+  description: string;
+  category: string;
+  image: string;
+};
+
+const fetchFakeStore = async (): Promise<TechBuckets> => {
+  const buckets: TechBuckets = {
+    Mobile: [],
+    Electronics: [],
+    "Computers & Laptops": [],
+  };
+  try {
+    const res = await fetch("https://fakestoreapi.com/products");
+    if (!res.ok) return buckets;
+    const items = (await res.json()) as FakeStoreProduct[];
+    for (const p of items) {
+      if (p.category !== "electronics") continue;
+      if (!p.image || !/^https?:\/\//.test(p.image)) continue;
+      if (!isProductSafe(p.title, p.description)) continue;
+      const t = p.title.toLowerCase();
+      // Storage + monitors land in Computers & Laptops; gaming drives in Electronics.
+      const target =
+        t.includes("monitor") || t.includes("ssd") || t.includes("hard drive")
+          ? "Computers & Laptops"
+          : "Electronics";
+      buckets[target].push({
+        name: p.title.trim(),
+        description: (p.description || `${p.title} — quality build, ready to ship.`).slice(0, 600),
+        price: p.price,
+        inventory: randInt(20, 200),
+        images: [p.image],
+      });
+    }
+  } catch {
+    // skip
+  }
+  return buckets;
+};
+
+type PlatziProduct = {
+  id: number;
+  title: string;
+  price: number;
+  description: string;
+  category: { id: number; name: string };
+  images: string[];
+};
+
+const fetchPlatzi = async (): Promise<TechBuckets> => {
+  const buckets: TechBuckets = {
+    Mobile: [],
+    Electronics: [],
+    "Computers & Laptops": [],
+  };
+  try {
+    const res = await fetch(
+      "https://api.escuelajs.co/api/v1/categories/2/products?limit=100&offset=0",
+    );
+    if (!res.ok) return buckets;
+    const items = (await res.json()) as PlatziProduct[];
+    for (const p of items) {
+      const rawImg = p.images?.[0];
+      if (!rawImg) continue;
+      // Platzi sometimes wraps images in extra brackets/quotes — strip them.
+      const img = rawImg.replace(/^["[]+|["\]]+$/g, "");
+      if (!/^https?:\/\/.+\.(jpe?g|png|webp)/i.test(img)) continue;
+      if (img.includes("placeimg") || img.includes("placehold")) continue;
+      if (!isProductSafe(p.title, p.description)) continue;
+
+      const t = p.title.toLowerCase();
+      let target: keyof TechBuckets | null = null;
+      if (t.includes("phone") || t.includes("iphone") || t.includes("galaxy")) {
+        target = "Mobile";
+      } else if (t.includes("laptop") || t.includes("macbook") || t.includes("notebook") || t.includes("pc ") || t.includes("desktop")) {
+        target = "Computers & Laptops";
+      } else if (
+        t.includes("headphone") ||
+        t.includes("earbud") ||
+        t.includes("speaker") ||
+        t.includes("controller") ||
+        t.includes("mouse") ||
+        t.includes("keyboard") ||
+        t.includes("smartwatch") ||
+        t.includes("watch")
+      ) {
+        target = "Electronics";
+      }
+      if (!target) continue;
+
+      buckets[target].push({
+        name: p.title.trim(),
+        description: (p.description || `${p.title}. Carefully picked for the catalog.`).slice(0, 600),
+        price: p.price,
+        inventory: randInt(20, 200),
+        images: [img],
+      });
+    }
+  } catch {
+    // skip
+  }
+  return buckets;
+};
+
+type WikiSummary = {
+  title: string;
+  extract?: string;
+  thumbnail?: { source: string };
+  originalimage?: { source: string };
+};
+
+const fetchWiki = async (page: string): Promise<WikiSummary | null> => {
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page)}`,
+      { headers: { "User-Agent": "DokanXpress/1.0 (seed)" } },
+    );
+    if (!res.ok) return null;
+    return (await res.json()) as WikiSummary;
+  } catch {
+    return null;
+  }
+};
+
+// Real flagship phones with Wikipedia pages. Price + brand are realistic
+// retail anchors — Wikipedia gives us the description and thumbnail.
+const WIKI_PHONES: { page: string; name: string; price: number; brand: string }[] = [
+  { page: "IPhone_15_Pro", name: "iPhone 15 Pro", price: 999, brand: "Apple" },
+  { page: "IPhone_15", name: "iPhone 15", price: 799, brand: "Apple" },
+  { page: "Samsung_Galaxy_S24_Ultra", name: "Samsung Galaxy S24 Ultra", price: 1199, brand: "Samsung" },
+  { page: "Samsung_Galaxy_S24", name: "Samsung Galaxy S24", price: 799, brand: "Samsung" },
+  { page: "Google_Pixel_8_Pro", name: "Google Pixel 8 Pro", price: 999, brand: "Google" },
+  { page: "Google_Pixel_8", name: "Google Pixel 8", price: 699, brand: "Google" },
+  { page: "OnePlus_12", name: "OnePlus 12", price: 799, brand: "OnePlus" },
+  { page: "Nothing_Phone_(2)", name: "Nothing Phone (2)", price: 599, brand: "Nothing" },
+  { page: "Asus_ROG_Phone_8", name: "ASUS ROG Phone 8", price: 1099, brand: "ASUS" },
+  { page: "Sony_Xperia_1_V", name: "Sony Xperia 1 V", price: 1399, brand: "Sony" },
+  { page: "Xiaomi_14", name: "Xiaomi 14", price: 899, brand: "Xiaomi" },
+];
+
+// Real popular laptops + tablets with Wikipedia pages.
+const WIKI_LAPTOPS: { page: string; name: string; price: number; brand: string }[] = [
+  { page: "MacBook_Pro", name: 'MacBook Pro 14" M3', price: 1599, brand: "Apple" },
+  { page: "MacBook_Air", name: 'MacBook Air 13" M3', price: 1099, brand: "Apple" },
+  { page: "Dell_XPS", name: "Dell XPS 13", price: 1299, brand: "Dell" },
+  { page: "ThinkPad_X1_Carbon", name: "Lenovo ThinkPad X1 Carbon Gen 12", price: 1899, brand: "Lenovo" },
+  { page: "HP_Spectre", name: "HP Spectre x360 14", price: 1499, brand: "HP" },
+  { page: "Surface_Laptop", name: "Microsoft Surface Laptop 6", price: 1199, brand: "Microsoft" },
+  { page: "Surface_Pro", name: "Microsoft Surface Pro 11", price: 999, brand: "Microsoft" },
+  { page: "Razer_Blade_15", name: "Razer Blade 15", price: 2499, brand: "Razer" },
+  { page: "Asus_ROG_Zephyrus", name: "ASUS ROG Zephyrus G14", price: 1799, brand: "ASUS" },
+  { page: "Framework_Laptop", name: "Framework Laptop 13", price: 1299, brand: "Framework" },
+  { page: "IPad_Pro", name: 'iPad Pro 13" M4', price: 1299, brand: "Apple" },
+  { page: "IPad_Air", name: 'iPad Air 13" M2', price: 799, brand: "Apple" },
+  { page: "Samsung_Galaxy_Tab_S9", name: "Samsung Galaxy Tab S9 Ultra", price: 999, brand: "Samsung" },
+];
+
+const fetchWikiTech = async (): Promise<{
+  phones: CatalogueProduct[];
+  laptops: CatalogueProduct[];
+}> => {
+  const phones: CatalogueProduct[] = [];
+  const laptops: CatalogueProduct[] = [];
+
+  const phoneResults = await Promise.all(WIKI_PHONES.map((p) => fetchWiki(p.page)));
+  WIKI_PHONES.forEach((seed, i) => {
+    const sum = phoneResults[i];
+    const img = sum?.thumbnail?.source ?? sum?.originalimage?.source;
+    if (!sum?.extract || !img) return;
+    if (!isProductSafe(seed.name, sum.extract)) return;
+    phones.push({
+      name: seed.name,
+      description: sum.extract.slice(0, 600),
+      price: seed.price,
+      inventory: randInt(20, 200),
+      images: [img],
+      brand: seed.brand,
+    });
+  });
+
+  const laptopResults = await Promise.all(WIKI_LAPTOPS.map((p) => fetchWiki(p.page)));
+  WIKI_LAPTOPS.forEach((seed, i) => {
+    const sum = laptopResults[i];
+    const img = sum?.thumbnail?.source ?? sum?.originalimage?.source;
+    if (!sum?.extract || !img) return;
+    if (!isProductSafe(seed.name, sum.extract)) return;
+    laptops.push({
+      name: seed.name,
+      description: sum.extract.slice(0, 600),
+      price: seed.price,
+      inventory: randInt(20, 200),
+      images: [img],
+      brand: seed.brand,
+    });
+  });
+
+  return { phones, laptops };
+};
+
 // ----- Static seed data ------------------------------------------------------
 
 const SHOPS = [
@@ -388,12 +641,13 @@ const SHOPS = [
     name: "WildPeak",
     email: "vendor4@dokanxpress.dev",
     blurb:
-      "Sports and outdoor gear for weekend adventurers — bags, bottles, gloves, helmets and the kit that travels with you.",
+      "Sports, outdoor, and motorcycle gear for weekend adventurers — bags, bottles, helmets, jackets and the kit that travels with you.",
   },
   {
     name: "EverGlow",
     email: "vendor5@dokanxpress.dev",
-    blurb: "Skin, makeup, and clean beauty drops curated by the team.",
+    blurb:
+      "Skin, makeup, and fragrance drops curated by the team — clean beauty for every routine.",
   },
 ] as const;
 
@@ -420,14 +674,23 @@ const REVIEW_SNIPPETS = [
 
 async function main() {
   console.log("fetching catalogues…");
-  const [dummy, books, makeup, skinCare] = await Promise.all([
-    fetchDummy(),
-    fetchBooks(),
-    fetchMakeup(),
-    fetchSkinCare(),
-  ]);
+  const [dummy, books, makeup, skinCare, fakeStore, platzi, wikiTech] =
+    await Promise.all([
+      fetchDummy(),
+      fetchBooks(),
+      fetchMakeup(),
+      fetchSkinCare(),
+      fetchFakeStore(),
+      fetchPlatzi(),
+      fetchWikiTech(),
+    ]);
   console.log(
     `  → DummyJSON ${dummy.length} | Books ${books.length} | Makeup ${makeup.length} | Skin Care ${skinCare.length}`,
+  );
+  console.log(
+    `  → FakeStore +${fakeStore.Mobile.length}M/${fakeStore.Electronics.length}E/${fakeStore["Computers & Laptops"].length}C` +
+      ` | Platzi +${platzi.Mobile.length}M/${platzi.Electronics.length}E/${platzi["Computers & Laptops"].length}C` +
+      ` | Wiki +${wikiTech.phones.length}phones/${wikiTech.laptops.length}laptops`,
   );
 
   const catalogue: CatalogueCategory[] = [];
@@ -438,6 +701,26 @@ async function main() {
       (c) => c.name !== "Makeup" && c.name !== "Skin Care",
     ),
   );
+
+  // Bulk up tech categories with real data from Fake Store + Platzi + Wikipedia
+  // so each lands ≥ 25 products. DummyJSON alone is too thin (5 laptops, 16 phones).
+  const techExtras: Record<keyof TechBuckets, CatalogueProduct[]> = {
+    Mobile: [...fakeStore.Mobile, ...platzi.Mobile, ...wikiTech.phones],
+    Electronics: [...fakeStore.Electronics, ...platzi.Electronics],
+    "Computers & Laptops": [
+      ...fakeStore["Computers & Laptops"],
+      ...platzi["Computers & Laptops"],
+      ...wikiTech.laptops,
+    ],
+  };
+  for (const cat of catalogue) {
+    const extras = techExtras[cat.name as keyof TechBuckets];
+    if (extras?.length) {
+      cat.products.push(...extras);
+      cat.bannerImage =
+        cat.bannerImage ?? cat.products[0]?.images[0] ?? null;
+    }
+  }
 
   if (makeup.length > 0) {
     catalogue.push({
