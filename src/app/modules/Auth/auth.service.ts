@@ -188,11 +188,11 @@ const forgotPassword = async (payload: { email: string }) => {
 
   const link = `${config.client_base_url}/reset-password?email=${encodeURIComponent(user.email)}&token=${token}`;
 
-  // Email send is best-effort. If SMTP is misconfigured (e.g. expired Gmail
-  // app password) we still return the link so the user can use it directly.
+  // Email send is best-effort. If the configured provider (Resend or Gmail)
+  // is misconfigured, we still return the link so the UI can surface it.
   let emailSent = false;
   try {
-    await sendEmail(user.email, `<a href=${link}>Reset Password</a>`);
+    await sendEmail(user.email, { resetLink: link });
     emailSent = true;
   } catch (err) {
     console.error("forgotPassword: sendEmail failed", err);

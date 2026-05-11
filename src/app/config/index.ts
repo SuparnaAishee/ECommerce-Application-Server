@@ -39,6 +39,13 @@ const envSchema = z.object({
   SENDER_EMAIL: z.string().email().optional(),
   APP_PASSWORD: z.string().optional(),
 
+  // Resend (preferred). When set, used instead of Gmail SMTP.
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z
+    .string()
+    .email()
+    .default("onboarding@resend.dev"),
+
   PAYMENT_URL: z.string().url(),
   PAYMENT_VERIFY_URL: z.string().url(),
   STORE_ID: z.string().min(1),
@@ -81,6 +88,8 @@ export default {
   cors_allowed_origins: env.CORS_ALLOWED_ORIGINS,
   sender_email: env.SENDER_EMAIL,
   app_password: env.APP_PASSWORD,
+  resend_api_key: env.RESEND_API_KEY,
+  resend_from_email: env.RESEND_FROM_EMAIL,
   payment_url: env.PAYMENT_URL,
   payment_verify_url: env.PAYMENT_VERIFY_URL,
   store_id: env.STORE_ID,
