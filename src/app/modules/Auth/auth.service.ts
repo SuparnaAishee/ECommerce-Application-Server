@@ -126,7 +126,13 @@ const refreshToken = async (token: string) => {
     },
   });
   const accessToken = jwtHelper.generateToken(
-    { email: user.email, role: user.role },
+    {
+      email: user.email,
+      role: user.role,
+      profilePhoto: user.profilePhoto,
+      name: user.name,
+      id: user.id,
+    },
     config.jwt_access_secret as string,
     config.jwt_access_expires_in as string
   );
