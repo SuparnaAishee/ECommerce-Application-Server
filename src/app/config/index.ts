@@ -4,28 +4,31 @@ import { z } from "zod";
 
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
+// Env values pasted via the Vercel dashboard can carry a trailing newline
+// or stray whitespace. .trim() everywhere keeps a bad paste from breaking prod.
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
   PORT: z.coerce.number().int().positive().default(5000),
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().trim().url(),
 
   BCRYPT_SALT_ROUND: z.coerce.number().int().min(4).max(15).default(12),
 
-  JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be >=32 chars"),
-  JWT_ACCESS_EXPIRES_IN: z.string().default("10d"),
-  JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be >=32 chars"),
-  JWT_REFRESH_EXPIRES_IN: z.string().default("30d"),
+  JWT_ACCESS_SECRET: z.string().trim().min(32, "JWT_ACCESS_SECRET must be >=32 chars"),
+  JWT_ACCESS_EXPIRES_IN: z.string().trim().default("10d"),
+  JWT_REFRESH_SECRET: z.string().trim().min(32, "JWT_REFRESH_SECRET must be >=32 chars"),
+  JWT_REFRESH_EXPIRES_IN: z.string().trim().default("30d"),
 
-  RESET_PASSWORD_SECRET: z.string().min(32),
-  RESET_PASSWORD_EXPIRES_IN: z.string().default("5m"),
+  RESET_PASSWORD_SECRET: z.string().trim().min(32),
+  RESET_PASSWORD_EXPIRES_IN: z.string().trim().default("5m"),
 
-  CLIENT_BASE_URL: z.string().url(),
-  SERVER_BASE_URL: z.string().url(),
+  CLIENT_BASE_URL: z.string().trim().url(),
+  SERVER_BASE_URL: z.string().trim().url(),
 
   CORS_ALLOWED_ORIGINS: z
     .string()
+    .trim()
     .optional()
     .transform((v) =>
       v
@@ -36,24 +39,26 @@ const envSchema = z.object({
         : undefined,
     ),
 
-  SENDER_EMAIL: z.string().email().optional(),
-  APP_PASSWORD: z.string().optional(),
+  SENDER_EMAIL: z.string().trim().email().optional(),
+  APP_PASSWORD: z.string().trim().optional(),
 
   // Resend (preferred). When set, used instead of Gmail SMTP.
-  RESEND_API_KEY: z.string().optional(),
+  RESEND_API_KEY: z.string().trim().optional(),
   RESEND_FROM_EMAIL: z
     .string()
+    .trim()
     .email()
     .default("onboarding@resend.dev"),
 
-  PAYMENT_URL: z.string().url(),
-  PAYMENT_VERIFY_URL: z.string().url(),
-  STORE_ID: z.string().min(1),
-  SIGNATURE_KEY: z.string().min(1),
+  PAYMENT_URL: z.string().trim().url(),
+  PAYMENT_VERIFY_URL: z.string().trim().url(),
+  STORE_ID: z.string().trim().min(1),
+  SIGNATURE_KEY: z.string().trim().min(1),
 
   // AI Shopping Assistant — chat API proxies user messages to this n8n webhook
   N8N_WEBHOOK_URL: z
     .string()
+    .trim()
     .url()
     .default("http://localhost:5678/webhook/chat"),
   N8N_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
